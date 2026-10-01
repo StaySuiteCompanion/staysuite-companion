@@ -1,8 +1,8 @@
 <?php
 /**
- * Full-width page template for the VS homepage.
+ * Full-width page template for the StaySuite homepage.
  *
- * Selected per page via Page Attributes → Template → VS Homepage.
+ * Selected per page via Page Attributes → Template → StaySuite Homepage.
  * Renders the block content without title, sidebar or container limits;
  * alignfull blocks break out to the viewport edges.
  *

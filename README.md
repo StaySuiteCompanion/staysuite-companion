@@ -27,10 +27,13 @@ PHP follows WordPress coding standards with PHPDoc everywhere; JS is React via `
 ## Release
 
 ```bash
-bin/export.sh [version]
+bin/release.sh             # patch: 0.2.0 -> 0.2.1
+bin/release.sh --minor     # 0.2.1 -> 0.3.0
+bin/release.sh --major     # 0.3.0 -> 1.0.0
+bin/build.sh               # minimal production zip → dist/
 ```
 
-Builds a lightweight wp.org zip (production files only — no `src`, `node_modules`, docs or configs) into `dist/`. See [`docs/export.md`](docs/export.md).
+`bin/release.sh` is the only command that writes a version; it syncs the header, `SSC_VERSION`, `readme.txt` `Stable tag:`, `package.json` and the changelog in one pass, then commits, tags `v{version}`, pushes and attaches the zip to the GitHub release. `--min-free X.Y.Z` raises the free version the Pro add-on requires, rewriting its gate constant, admin notice, readmes and `docs/pro.md`. Full process, including the wp.org SVN publish: [`docs/release.md`](docs/release.md).
 
 ## License
 

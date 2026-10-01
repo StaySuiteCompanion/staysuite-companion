@@ -43,7 +43,7 @@ class Patterns {
             'label' => esc_html__('StaySuite', 'staysuite-companion'),
         ));
         register_block_pattern('ssc/homepage', array(
-            'title'       => esc_html__('VS Homepage', 'staysuite-companion'),
+            'title'       => esc_html__('StaySuite Homepage', 'staysuite-companion'),
             'description' => esc_html__('Cover hero with search, destination tablets, listing carousels, why-choose grid, payments and group booking.', 'staysuite-companion'),
             'categories'  => array('vs'),
             'content'     => self::homepage_content(),
