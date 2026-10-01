@@ -8,16 +8,39 @@
 }
 
 .ssc-hotel-card-media {
+    position: relative;
     display: block;
     aspect-ratio: 4 / 3;
     overflow: hidden;
     background: #f0f0f0;
 }
 
+/* The theme and its Bootstrap base carry plenty of intrinsic image sizing
+   (`height: auto`, `.carousel-inner > .item > img`, `.img-responsive`), and any
+   of them can outrank a plain width/height pair, which is how a featured image
+   ended up letterboxed inside the card instead of filling it. All four insets
+   are set so the image stretches to the media box whatever the theme does to
+   its width or height, and object-fit decides how the photo is cropped inside
+   it — so every crop of every upload size fills the whole area. */
 .ssc-hotel-card-media img {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
     width: 100%;
-    height: 100%;
+    height: 100% !important;
+    max-width: none;
     object-fit: cover;
+    object-position: center;
+}
+
+.ssc-hotel-card-placeholder {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
 }
 
 .ssc-hotel-card-body {
