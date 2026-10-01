@@ -8,6 +8,8 @@ Full-bleed cover (page featured image or `image_id`) with title, subtitle and th
 
 Attributes: `title`, `subtitle`, `image_id`, `search_mode` (`theme`|`simple`|`none`), `show_search` (`1`|`0`), plus core `align` (use `full`).
 
+Leave `image_id` empty to use the page's featured image. That fallback exists because attachment IDs do not survive copying content between databases: a stored `image_id` that worked locally can point at an unrelated (or missing) attachment on staging or production, leaving a cover with only its background colour.
+
 ```
 [ssc_hero title="Find your next stay" subtitle="Hotels across Bangladesh" image_id="123"]
 ```

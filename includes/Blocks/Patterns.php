@@ -12,7 +12,7 @@
 
 namespace StaySuite\Companion\Blocks;
 
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
@@ -27,7 +27,7 @@ class Patterns {
      * @return void
      */
     public function __construct() {
-        add_action('init', array($this, 'register'));
+        add_action( 'init', array( $this, 'register' ) );
     }
 
     /**
@@ -36,26 +36,33 @@ class Patterns {
      * @return void
      */
     public function register() {
-        if (!function_exists('register_block_pattern')) {
+        if ( ! function_exists( 'register_block_pattern' ) ) {
             return;
         }
-        register_block_pattern_category('vs', array(
-            'label' => esc_html__('StaySuite', 'staysuite-companion'),
-        ));
-        register_block_pattern('ssc/homepage', array(
-            'title'       => esc_html__('StaySuite Homepage', 'staysuite-companion'),
-            'description' => esc_html__('Cover hero with search, destination tablets, listing carousels, why-choose grid, payments and group booking.', 'staysuite-companion'),
-            'categories'  => array('vs'),
-            'content'     => self::homepage_content(),
-        ));
+        register_block_pattern_category(
+            'vs', array(
+				'label' => esc_html__( 'StaySuite', 'staysuite-companion' ),
+            )
+        );
+        register_block_pattern(
+            'ssc/homepage', array(
+				'title'       => esc_html__( 'StaySuite Homepage', 'staysuite-companion' ),
+				'description' => esc_html__( 'Cover hero with search, destination tablets, listing carousels, why-choose grid, payments and group booking.', 'staysuite-companion' ),
+				'categories'  => array( 'vs' ),
+				'content'     => self::homepage_content(),
+            )
+        );
     }
 
     /**
      * Homepage pattern markup.
      *
+     * Also used by Installer to seed the homepage page created on
+     * activation, so the page and the pattern never drift apart.
+     *
      * @return string Block grammar for the full homepage.
      */
-    private static function homepage_content() {
+    public static function homepage_content() {
         return <<<'HTML'
 <!-- wp:ssc/hero-search {"align":"full","search_mode":"theme"} /-->
 <!-- wp:ssc/term-tablets {"taxonomy":"property_city","number":6} /-->

@@ -15,8 +15,9 @@ namespace StaySuite\Companion\Blocks;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
+use WP_Post;
 
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
@@ -45,7 +46,7 @@ class PreviewEndpoint {
      * @return void
      */
     public function __construct() {
-        add_action('rest_api_init', array($this, 'register_routes'));
+        add_action( 'rest_api_init', array( $this, 'register_routes' ) );
     }
 
     /**
@@ -54,11 +55,13 @@ class PreviewEndpoint {
      * @return void
      */
     public function register_routes() {
-        register_rest_route(self::NAMESPACE, self::ROUTE, array(
-            'methods'             => 'POST',
-            'callback'            => array($this, 'render_preview'),
-            'permission_callback' => array($this, 'can_preview'),
-        ));
+        register_rest_route(
+            self::NAMESPACE, self::ROUTE, array(
+				'methods'             => 'POST',
+				'callback'            => array( $this, 'render_preview' ),
+				'permission_callback' => array( $this, 'can_preview' ),
+            )
+        );
     }
 
     /**
@@ -67,7 +70,7 @@ class PreviewEndpoint {
      * @return bool True for users who can edit posts.
      */
     public function can_preview() {
-        return current_user_can('edit_posts');
+        return current_user_can( 'edit_posts' );
     }
 
     /**
@@ -76,39 +79,59 @@ class PreviewEndpoint {
      * @param WP_REST_Request $request REST request.
      * @return WP_REST_Response|WP_Error Response with html or error.
      */
-    public function render_preview($request) {
+    public function render_preview( $request ) {
         // NOTE: no sanitize_key() here — it strips the "/" all block names
         // contain. Strict allowlist comparison instead.
-        $block = (string) $request->get_param('block');
-        $attributes = $request->get_param('attributes');
-        if (!is_array($attributes)) {
+        $block = (string) $request->get_param( 'block' );
+        $attributes = $request->get_param( 'attributes' );
+        if ( ! is_array( $attributes ) ) {
             $attributes = array();
         }
-        switch ($block) {
+        switch ( $block ) {
             case 'ssc/term-tablets':
-                $html = Renderer::render_term_tablets($this->coerce_tablets($attributes));
+                $html = Renderer::render_term_tablets( $this->coerce_tablets( $attributes ) );
                 break;
             case 'ssc/listing-carousel':
-                $html = Renderer::render_listing_carousel($this->coerce_carousel($attributes));
+                $html = Renderer::render_listing_carousel( $this->coerce_carousel( $attributes ) );
                 break;
             case 'ssc/hero-search':
-                $html = Renderer::render_hero($this->coerce_hero($attributes));
+                $hero = $this->coerce_hero( $attributes );
+                // The REST request has no query, so the cover fallback needs
+                // the post being edited.
+                $hero['post_id'] = $this->request_post_id( $request );
+                $html = Renderer::render_hero( $hero );
                 break;
             case 'ssc/group-booking':
-                $html = $this->render_booking($attributes);
+                $html = $this->render_booking( $attributes );
                 break;
             case 'ssc/payment-strip':
-                $html = Renderer::render_payment_strip(array(
-                    'title'    => isset($attributes['title']) ? sanitize_text_field($attributes['title']) : '',
-                    'image_id' => isset($attributes['image_id']) ? intval($attributes['image_id']) : 0,
-                ));
+                $html = Renderer::render_payment_strip(
+                    array(
+						'title'    => isset( $attributes['title'] ) ? sanitize_text_field( $attributes['title'] ) : '',
+						'image_id' => isset( $attributes['image_id'] ) ? intval( $attributes['image_id'] ) : 0,
+                    )
+                );
                 break;
             default:
-                return new WP_Error('ssc_unknown_block', esc_html__('Unknown block.', 'staysuite-companion'), array('status' => 400));
+                return new WP_Error( 'ssc_unknown_block', esc_html__( 'Unknown block.', 'staysuite-companion' ), array( 'status' => 400 ) );
         }
         // Marker class lets preview-only CSS (e.g. hiding the JS-driven
         // guest dropdown) apply without touching the frontend.
-        return new WP_REST_Response(array('html' => '<div class="ssc-preview">' . $html . '</div>'), 200);
+        return new WP_REST_Response( array( 'html' => '<div class="ssc-preview">' . $html . '</div>' ), 200 );
+    }
+
+    /**
+     * Read the post id sent with a preview request.
+     *
+     * @param WP_REST_Request $request REST request.
+     * @return int Post ID, or 0 when absent or not a post.
+     */
+    private function request_post_id( $request ) {
+        $post_id = intval( $request->get_param( 'postId' ) );
+        if ( $post_id > 0 && get_post( $post_id ) instanceof WP_Post ) {
+            return $post_id;
+        }
+        return 0;
     }
 
     /**
@@ -117,11 +140,11 @@ class PreviewEndpoint {
      * @param array<string,mixed> $attributes Raw attributes.
      * @return array<string,mixed> Coerced attributes.
      */
-    private function coerce_tablets($attributes) {
+    private function coerce_tablets( $attributes ) {
         return array(
-            'taxonomy'   => isset($attributes['taxonomy']) ? sanitize_key($attributes['taxonomy']) : 'property_city',
-            'number'     => isset($attributes['number']) ? intval($attributes['number']) : 6,
-            'hide_empty' => !empty($attributes['hide_empty']),
+            'taxonomy'   => isset( $attributes['taxonomy'] ) ? sanitize_key( $attributes['taxonomy'] ) : 'property_city',
+            'number'     => isset( $attributes['number'] ) ? intval( $attributes['number'] ) : 6,
+            'hide_empty' => ! empty( $attributes['hide_empty'] ),
         );
     }
 
@@ -131,17 +154,17 @@ class PreviewEndpoint {
      * @param array<string,mixed> $attributes Raw attributes.
      * @return array<string,mixed> Coerced attributes.
      */
-    private function coerce_carousel($attributes) {
+    private function coerce_carousel( $attributes ) {
         return array(
-            'title'         => isset($attributes['title']) ? sanitize_text_field($attributes['title']) : '',
-            'source'        => isset($attributes['source']) ? sanitize_key($attributes['source']) : 'rooms',
-            'taxonomy'      => isset($attributes['taxonomy']) ? sanitize_key($attributes['taxonomy']) : '',
-            'term'          => isset($attributes['term']) ? sanitize_title($attributes['term']) : '',
-            'city'          => isset($attributes['city']) ? sanitize_title($attributes['city']) : '',
-            'count'         => isset($attributes['count']) ? intval($attributes['count']) : 8,
-            'featured_only' => !empty($attributes['featured_only']),
-            'include_ids'   => isset($attributes['include_ids']) ? sanitize_text_field($attributes['include_ids']) : '',
-            'order'         => isset($attributes['order']) ? sanitize_key($attributes['order']) : 'featured',
+            'title'         => isset( $attributes['title'] ) ? sanitize_text_field( $attributes['title'] ) : '',
+            'source'        => isset( $attributes['source'] ) ? sanitize_key( $attributes['source'] ) : 'rooms',
+            'taxonomy'      => isset( $attributes['taxonomy'] ) ? sanitize_key( $attributes['taxonomy'] ) : '',
+            'term'          => isset( $attributes['term'] ) ? sanitize_title( $attributes['term'] ) : '',
+            'city'          => isset( $attributes['city'] ) ? sanitize_title( $attributes['city'] ) : '',
+            'count'         => isset( $attributes['count'] ) ? intval( $attributes['count'] ) : 8,
+            'featured_only' => ! empty( $attributes['featured_only'] ),
+            'include_ids'   => isset( $attributes['include_ids'] ) ? sanitize_text_field( $attributes['include_ids'] ) : '',
+            'order'         => isset( $attributes['order'] ) ? sanitize_key( $attributes['order'] ) : 'featured',
         );
     }
 
@@ -151,13 +174,13 @@ class PreviewEndpoint {
      * @param array<string,mixed> $attributes Raw attributes.
      * @return array<string,mixed> Coerced attributes.
      */
-    private function coerce_hero($attributes) {
+    private function coerce_hero( $attributes ) {
         return array(
-            'title'       => isset($attributes['title']) ? sanitize_text_field($attributes['title']) : '',
-            'subtitle'    => isset($attributes['subtitle']) ? sanitize_text_field($attributes['subtitle']) : '',
-            'image_id'    => isset($attributes['image_id']) ? intval($attributes['image_id']) : 0,
-            'show_search' => !isset($attributes['show_search']) || !empty($attributes['show_search']),
-            'search_mode' => isset($attributes['search_mode']) ? sanitize_key($attributes['search_mode']) : 'theme',
+            'title'       => isset( $attributes['title'] ) ? sanitize_text_field( $attributes['title'] ) : '',
+            'subtitle'    => isset( $attributes['subtitle'] ) ? sanitize_text_field( $attributes['subtitle'] ) : '',
+            'image_id'    => isset( $attributes['image_id'] ) ? intval( $attributes['image_id'] ) : 0,
+            'show_search' => ! isset( $attributes['show_search'] ) || ! empty( $attributes['show_search'] ),
+            'search_mode' => isset( $attributes['search_mode'] ) ? sanitize_key( $attributes['search_mode'] ) : 'theme',
         );
     }
     /**
@@ -166,13 +189,13 @@ class PreviewEndpoint {
      * @param array<string,mixed> $attributes Raw attributes.
      * @return string Mount node HTML.
      */
-    private function render_booking($attributes) {
-        $title = isset($attributes['title']) ? sanitize_text_field($attributes['title']) : '';
+    private function render_booking( $attributes ) {
+        $title = isset( $attributes['title'] ) ? sanitize_text_field( $attributes['title'] ) : '';
         $html = '<div class="ssc-booking" data-ssc-group-booking';
-        if ($title !== '') {
-            $html .= ' data-title="' . esc_attr($title) . '"';
+        if ( $title !== '' ) {
+            $html .= ' data-title="' . esc_attr( $title ) . '"';
         }
-        $html .= '><p>' . esc_html__('Group booking form renders on the frontend.', 'staysuite-companion') . '</p></div>';
+        $html .= '><p>' . esc_html__( 'Group booking form renders on the frontend.', 'staysuite-companion' ) . '</p></div>';
         return $html;
     }
 }
