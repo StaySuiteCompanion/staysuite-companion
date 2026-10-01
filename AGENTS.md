@@ -1,0 +1,87 @@
+# AGENTS.md — StaySuite Companion for WP Rentals
+
+Instructions for AI coding agents (and humans) working in this repository.
+
+## What this plugin is
+
+A companion plugin for the [WP Rentals](https://themeforest.net/item/wprentals-booking-accommodation-wordpress-theme/12332978) theme. It adds a **hotel layer** on top of the theme's existing listings (rooms): a `ssc_hotel` post type, five homepage blocks, and a group quote flow.
+
+**The one rule that shapes everything: never modify a theme file.** Every override ships inside this plugin — templates via `PageTemplate`, styles in `assets/css`, scripts in `assets/build`. If something seems to need a theme edit, it needs a `theme_page_templates` filter, a `template_include` filter, or a `wp_add_inline_style` call instead.
+
+## Commands
+
+```bash
+composer install          # dev deps (phpcs + WPCS)
+npm install               # @wordpress/scripts
+
+composer lint             # PHPCS (WordPress standard)
+vendor/bin/phpcbf         # auto-fix what can be fixed
+npm run build             # dev build → assets/build
+npm run build:dist        # production zip → dist/
+
+bin/build.sh              # minimal production zip
+bin/release.sh            # patch release: 0.2.0 → 0.2.1
+bin/release.sh --minor    # 0.2.1 → 0.3.0
+bin/release.sh --major    # 0.3.0 → 1.0.0
+bin/release.sh --dry-run  # show every step, change nothing
+```
+
+Two skills in `.claude/skills/` cover the release and changelog work in depth — read them before shipping: `wp-plugin-release`, `wp-changelog`.
+
+Note: `npm run build` needs `NODE_ENV=development`. A shell that exports `NODE_ENV=production` makes npm skip devDependencies, where `@wordpress/scripts` lives, and the build fails confusingly. `bin/build.sh` forces it.
+
+## Architecture
+
+| Area | Files | Responsibility |
+|---|---|---|
+| Boot | `staysuite-companion.php` | Singleton + container, constants, activation hooks, translations |
+| Hotels | `includes/Hotel/` | `ssc_hotel` CPT, room↔hotel linking, queries |
+| Blocks | `includes/Blocks/` | Block registration, server-side rendering, editor previews, patterns |
+| Booking | `includes/Booking/` | Group request CPT, quote form, AJAX submit |
+| Frontend | `includes/Frontend/` | Page template, template loader, scripts, theme integration |
+| Admin | `includes/Admin/` | Settings, room assignment, term image/repair tools |
+| Install | `includes/Installer.php` | Activation checks, DB flush, `vs_*` → `ssc_*` migration |
+| UI assets | `assets/` | Compiled JS (`build/`), hand-written CSS, theme logos |
+
+Classes are namespaced `StaySuite\Companion\…` and autoloaded by classmap (`composer.json` → `includes/`). Instantiate them in `Plugin::instantiate()`; shared ones live in the container.
+
+## Coding rules
+
+- **WordPress coding standards, no exceptions.** Tabs, spaces inside parentheses, Yoda conditions, one blank line before returns, PHPDoc on every class and method with `@package` and `@author`. Run `composer lint` before committing.
+- **Namespace every hook** — these are the public seams the Pro add-on builds on, so renaming one is a breaking change. PHP actions and filters take `ssc_` plus a descriptive name (`ssc_room_card_actions`, `ssc_quote_payload`, `ssc_group_request_saved`); the admin tab registry is a JS filter, `ssc.admin.tabs`. Shortcodes are `ssc_*`, blocks `ssc/*`, REST routes `ssc/v1/*`. Document every new one in `docs/hooks.md`.
+- **Prefixes:** `ssc_` functions and meta (`_ssc_`), `SSC_` constants (`SSC_VERSION`, `SSC_PATH`, `SSC_URL`). Text domain `staysuite-companion`.
+- **Escape on output** (`esc_html`, `esc_attr`, `esc_url`, `wp_kses_post`), **prepare on input** (`$wpdb->prepare` for every query, `sanitize_*` for every field), **nonce every** AJAX and REST route.
+- **Translate every user-facing string** with the text domain, including admin notices and JS (`wp.i18n` + `wp_set_script_translations`).
+- **SQL:** use `$wpdb->prepare`. Direct queries need a `phpcs:disable WordPress.DB.DirectDatabaseQuery` comment explaining why.
+- **Never enqueue from a CDN.** Register scripts and styles with the plugin, with explicit dependencies and version `SSC_VERSION`.
+- **JS/React:** `@wordpress/scripts`, components in `src/`, output in `assets/build/`. Use `wp.element`, the `@wordpress/*` packages and `wp.apiFetch` — no jQuery, no new runtime dependencies. Each screen gets its own script handle in `Frontend/Scripts.php`.
+- **Blocks** are dynamically registered in `Blocks/Registry.php` with server-side rendering; editor previews go through `ssc/v1/preview`.
+
+## Data and compatibility
+
+- Post types: `ssc_hotel`, `ssc_group_request`. Listings (rooms) are the theme's own posts — never copy or duplicate theme data.
+- Meta: `_ssc_*`. Renaming a meta key needs a migration in `Installer::maybe_migrate()` (idempotent, guarded by an option flag) and a `--major` release.
+- Theme integration is defensive: guard every theme function call with `function_exists()` so a theme update cannot fatal the site.
+- Read availability from the theme (`wpestate_check_booking_valability`), never re-implement booking.
+
+## Boundaries with the Pro add-on
+
+- **No license, updater or payment code in this repository.** wordpress.org reviewers reject it, and Pro must work without touching free.
+- Pro hooks free's public seams and writes only `_ssc_pro_*` meta. When you add a seam Pro might need, add it as an action/filter that passes the data Pro needs, and document it in `docs/hooks.md`.
+- The free version this plugin requires of Pro is the other way around: Pro's `MIN_FREE_VERSION`. Raise it from the free side with `bin/release.sh --min-free X.Y.Z` when Pro starts depending on a new hook here.
+
+## Release rules
+
+- **`bin/release.sh` is the only thing that writes a version.** Never hand-edit `Version:`, `SSC_VERSION`, `Stable tag:` or `package.json` in a release commit — the script syncs all of them and fails the build when they disagree.
+- `--dry-run` first, always. It is free and catches everything the real run would do.
+- Changelog bullets live in `CHANGELOG.d/{version}.md` and are inserted into `readme.txt` by the script. Write them for a site owner: what changed for them, not which component changed.
+- `dist/` is git-ignored. Never commit a zip.
+- wp.org publication happens after the GitHub release: trunk, then `svn cp trunk tags/{version}` — see `docs/release.md`.
+
+## Before you finish
+
+1. `composer lint` — new violations are not acceptable.
+2. `npm run build` — the committed `assets/build/` must match `src/`.
+3. `bin/build.sh` — confirm the zip contains only runtime files and still activates.
+4. Update `docs/` when behaviour or a hook changes; update `readme.txt` only when the plugin page should say something new.
+5. Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`) — the changelog tooling reads them.

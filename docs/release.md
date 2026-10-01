@@ -76,6 +76,11 @@ No flag is a patch release (bug fixes, no behaviour change). `--minor` is for ne
 
 The release script does not care how commits are worded, but Conventional Commits (`feat:`, `fix:`, `chore:`) make the changelog trivial to draft.
 
+Two skills ship with the repository under `.claude/skills/` and automate the rest of the process:
+
+- `wp-plugin-release` — what to commit, version placement, wp.org SVN publishing.
+- `wp-changelog` — turning `git log v0.2.0..HEAD` into the `readme.txt` entry. Its `scripts/changelog-collect.sh` collects and groups the commits for you.
+
 ## wp.org publish
 
 ```bash
