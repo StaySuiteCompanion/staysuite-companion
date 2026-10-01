@@ -10,7 +10,7 @@ namespace StaySuite\Companion\Frontend;
 
 use StaySuite\Companion\Hotel\Repository;
 
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
@@ -25,7 +25,7 @@ class RoomSingleLink {
      * @return void
      */
     public function __construct() {
-        add_filter('the_content', array($this, 'append_hotel_box'), 25);
+        add_filter( 'the_content', array( $this, 'append_hotel_box' ), 25 );
     }
 
     /**
@@ -34,15 +34,15 @@ class RoomSingleLink {
      * @param string $content Post content.
      * @return string Content with hotel box appended when linked.
      */
-    public function append_hotel_box($content) {
-        if (!is_singular('estate_property') || !is_main_query() || !in_the_loop()) {
+    public function append_hotel_box( $content ) {
+        if ( ! is_singular( 'estate_property' ) || ! is_main_query() || ! in_the_loop() ) {
             return $content;
         }
-        $hotel_id = Repository::get_room_hotel_id(get_the_ID());
-        if ($hotel_id <= 0 || get_post_status($hotel_id) !== 'publish') {
+        $hotel_id = Repository::get_room_hotel_id( get_the_ID() );
+        if ( $hotel_id <= 0 || get_post_status( $hotel_id ) !== 'publish' ) {
             return $content;
         }
-        return $content . $this->render_box($hotel_id);
+        return $content . $this->render_box( $hotel_id );
     }
 
     /**
@@ -51,28 +51,28 @@ class RoomSingleLink {
      * @param int $hotel_id Hotel post ID.
      * @return string Box HTML.
      */
-    private function render_box($hotel_id) {
-        $room_count = Repository::get_room_count($hotel_id);
-        $min_price = Repository::get_min_price($hotel_id);
-        $url = get_permalink($hotel_id);
+    private function render_box( $hotel_id ) {
+        $room_count = Repository::get_room_count( $hotel_id );
+        $min_price = Repository::get_min_price( $hotel_id );
+        $url = get_permalink( $hotel_id );
 
         $box = '<aside class="ssc-hotel-box">';
-        $box .= '<div class="ssc-hotel-box-label">' . esc_html__('Part of', 'staysuite-companion') . '</div>';
-        $box .= '<a class="ssc-hotel-box-name" href="' . esc_url($url) . '">' . esc_html(get_the_title($hotel_id)) . '</a>';
+        $box .= '<div class="ssc-hotel-box-label">' . esc_html__( 'Part of', 'staysuite-companion' ) . '</div>';
+        $box .= '<a class="ssc-hotel-box-name" href="' . esc_url( $url ) . '">' . esc_html( get_the_title( $hotel_id ) ) . '</a>';
 
         $meta = array();
-        if ($room_count > 0) {
+        if ( $room_count > 0 ) {
             /* translators: %d: number of rooms */
-            $meta[] = sprintf(esc_html(_n('%d room', '%d rooms', $room_count, 'staysuite-companion')), intval($room_count));
+            $meta[] = sprintf( esc_html( _n( '%d room', '%d rooms', $room_count, 'staysuite-companion' ) ), intval( $room_count ) );
         }
-        if ($min_price > 0) {
+        if ( $min_price > 0 ) {
             /* translators: %s: starting price */
-            $meta[] = sprintf(esc_html__('from %s / night', 'staysuite-companion'), Repository::format_price($min_price));
+            $meta[] = sprintf( esc_html__( 'from %s / night', 'staysuite-companion' ), Repository::format_price( $min_price ) );
         }
-        if (!empty($meta)) {
-            $box .= '<div class="ssc-hotel-box-meta">' . esc_html(implode(' · ', $meta)) . '</div>';
+        if ( ! empty( $meta ) ) {
+            $box .= '<div class="ssc-hotel-box-meta">' . esc_html( implode( ' · ', $meta ) ) . '</div>';
         }
-        $box .= '<a class="ssc-hotel-box-cta" href="' . esc_url($url) . '">' . esc_html__('View hotel & all rooms', 'staysuite-companion') . '</a>';
+        $box .= '<a class="ssc-hotel-box-cta" href="' . esc_url( $url ) . '">' . esc_html__( 'View hotel & all rooms', 'staysuite-companion' ) . '</a>';
         $box .= '</aside>';
 
         return $box;

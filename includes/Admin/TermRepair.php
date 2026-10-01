@@ -12,7 +12,7 @@
 
 namespace StaySuite\Companion\Admin;
 
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
@@ -34,9 +34,9 @@ class TermRepair {
      * @return void
      */
     public function __construct() {
-        add_action('admin_init', array($this, 'maybe_sweep'));
-        add_action('created_property_area', array($this, 'repair_term'));
-        add_action('edited_property_area', array($this, 'repair_term'));
+        add_action( 'admin_init', array( $this, 'maybe_sweep' ) );
+        add_action( 'created_property_area', array( $this, 'repair_term' ) );
+        add_action( 'edited_property_area', array( $this, 'repair_term' ) );
     }
 
     /**
@@ -45,16 +45,22 @@ class TermRepair {
      * @return void
      */
     public function maybe_sweep() {
-        if (get_transient(self::SWEEP_TRANSIENT) !== false) {
+        if ( get_transient( self::SWEEP_TRANSIENT ) !== false ) {
             return;
         }
-        set_transient(self::SWEEP_TRANSIENT, 1, WEEK_IN_SECONDS);
-        $terms = get_terms(array('taxonomy' => 'property_area', 'hide_empty' => false, 'fields' => 'ids'));
-        if (is_wp_error($terms)) {
+        set_transient( self::SWEEP_TRANSIENT, 1, WEEK_IN_SECONDS );
+        $terms = get_terms(
+            array(
+				'taxonomy' => 'property_area',
+				'hide_empty' => false,
+				'fields' => 'ids',
+            )
+        );
+        if ( is_wp_error( $terms ) ) {
             return;
         }
-        foreach ($terms as $term_id) {
-            $this->repair_term(intval($term_id));
+        foreach ( $terms as $term_id ) {
+            $this->repair_term( intval( $term_id ) );
         }
     }
 
@@ -64,15 +70,15 @@ class TermRepair {
      * @param int $term_id Term ID.
      * @return void
      */
-    public function repair_term($term_id) {
-        $key = 'taxonomy_' . intval($term_id);
-        $meta = get_option($key);
-        if (!is_array($meta)) {
+    public function repair_term( $term_id ) {
+        $key = 'taxonomy_' . intval( $term_id );
+        $meta = get_option( $key );
+        if ( ! is_array( $meta ) ) {
             $meta = array();
         }
-        if (!array_key_exists('cityparent', $meta)) {
+        if ( ! array_key_exists( 'cityparent', $meta ) ) {
             $meta['cityparent'] = '';
-            update_option($key, $meta);
+            update_option( $key, $meta );
         }
     }
 }

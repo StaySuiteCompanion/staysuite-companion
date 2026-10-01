@@ -10,7 +10,7 @@ namespace StaySuite\Companion\Frontend;
 
 use StaySuite\Companion\Hotel\HotelCPT;
 
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
@@ -25,7 +25,7 @@ class TemplateLoader {
      * @return void
      */
     public function __construct() {
-        add_filter('template_include', array($this, 'load_hotel_template'), 20);
+        add_filter( 'template_include', array( $this, 'load_hotel_template' ), 20 );
     }
 
     /**
@@ -34,16 +34,16 @@ class TemplateLoader {
      * @param string $template Template path resolved by WordPress.
      * @return string Plugin template for hotels, otherwise untouched.
      */
-    public function load_hotel_template($template) {
-        if (is_singular(HotelCPT::POST_TYPE)) {
+    public function load_hotel_template( $template ) {
+        if ( is_singular( HotelCPT::POST_TYPE ) ) {
             $plugin_template = SSC_PATH . 'templates/single-ssc_hotel.php';
-            if (file_exists($plugin_template)) {
+            if ( file_exists( $plugin_template ) ) {
                 /**
                  * Filter the hotel single template path (Pro: overrides).
                  *
                  * @param string $plugin_template Plugin template file.
                  */
-                return apply_filters('ssc_single_hotel_template', $plugin_template);
+                return apply_filters( 'ssc_single_hotel_template', $plugin_template );
             }
         }
         return $template;

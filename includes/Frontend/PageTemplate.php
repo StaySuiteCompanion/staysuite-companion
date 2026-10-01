@@ -12,7 +12,7 @@
 
 namespace StaySuite\Companion\Frontend;
 
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
@@ -34,10 +34,10 @@ class PageTemplate {
      * @return void
      */
     public function __construct() {
-        add_filter('theme_page_templates', array($this, 'add_templates'));
-        add_filter('template_include', array($this, 'load_template'), 30);
-        add_filter('body_class', array($this, 'add_homepage_class'));
-        add_filter('get_post_metadata', array($this, 'force_transparent_header'), 10, 4);
+        add_filter( 'theme_page_templates', array( $this, 'add_templates' ) );
+        add_filter( 'template_include', array( $this, 'load_template' ), 30 );
+        add_filter( 'body_class', array( $this, 'add_homepage_class' ) );
+        add_filter( 'get_post_metadata', array( $this, 'force_transparent_header' ), 10, 4 );
     }
 
     /**
@@ -46,8 +46,8 @@ class PageTemplate {
      * @param array<string,string> $templates Theme templates (file => label).
      * @return array<string,string> Templates with ours added.
      */
-    public function add_templates($templates) {
-        $templates[self::HOMEPAGE_SLUG] = esc_html__('StaySuite Homepage', 'staysuite-companion');
+    public function add_templates( $templates ) {
+        $templates[ self::HOMEPAGE_SLUG ] = esc_html__( 'StaySuite Homepage', 'staysuite-companion' );
         return $templates;
     }
 
@@ -57,10 +57,10 @@ class PageTemplate {
      * @param string $template Template path resolved by WordPress.
      * @return string Plugin template for StaySuite Homepage pages, otherwise untouched.
      */
-    public function load_template($template) {
-        if (is_page() && get_page_template_slug() === self::HOMEPAGE_SLUG) {
+    public function load_template( $template ) {
+        if ( is_page() && get_page_template_slug() === self::HOMEPAGE_SLUG ) {
             $plugin_template = SSC_PATH . 'templates/page-ssc-homepage.php';
-            if (file_exists($plugin_template)) {
+            if ( file_exists( $plugin_template ) ) {
                 return $plugin_template;
             }
         }
@@ -73,8 +73,8 @@ class PageTemplate {
      * @param string[] $classes Body classes.
      * @return string[] Body classes with homepage flag added when applicable.
      */
-    public function add_homepage_class($classes) {
-        if (is_page() && get_page_template_slug() === self::HOMEPAGE_SLUG) {
+    public function add_homepage_class( $classes ) {
+        if ( is_page() && get_page_template_slug() === self::HOMEPAGE_SLUG ) {
             $classes[] = 'ssc-homepage';
         }
         return $classes;
@@ -93,14 +93,16 @@ class PageTemplate {
      * @param bool   $single  Whether a single value was requested.
      * @return mixed "yes" for our pages, otherwise untouched.
      */
-    public function force_transparent_header($value, $post_id, $meta_key, $single) {
-        if ($meta_key !== 'transparent_status' || is_admin() || $value !== null) {
+    public function force_transparent_header( $value, $post_id, $meta_key, $single ) {
+        // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Required by the get_post_metadata filter signature.
+        unset( $single );
+        if ( $meta_key !== 'transparent_status' || is_admin() || $value !== null ) {
             return $value;
         }
-        if (get_post_type($post_id) !== 'page') {
+        if ( get_post_type( $post_id ) !== 'page' ) {
             return $value;
         }
-        if (get_page_template_slug($post_id) !== self::HOMEPAGE_SLUG) {
+        if ( get_page_template_slug( $post_id ) !== self::HOMEPAGE_SLUG ) {
             return $value;
         }
         return 'yes';

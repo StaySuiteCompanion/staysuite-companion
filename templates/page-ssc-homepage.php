@@ -10,13 +10,13 @@
  * @author Tanmay Kirtania <jktanmay@gmail.com>
  */
 
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
 get_header();
 
-while (have_posts()) :
+while ( have_posts() ) :
     the_post();
     ?>
     <main class="ssc-homepage-template">

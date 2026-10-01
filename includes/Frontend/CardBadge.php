@@ -10,7 +10,7 @@ namespace StaySuite\Companion\Frontend;
 
 use StaySuite\Companion\Hotel\Repository;
 
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
@@ -39,8 +39,8 @@ class CardBadge {
      * @return void
      */
     public function __construct() {
-        add_action('wp_ajax_ssc_resolve_hotels', array($this, 'resolve'));
-        add_action('wp_ajax_nopriv_ssc_resolve_hotels', array($this, 'resolve'));
+        add_action( 'wp_ajax_ssc_resolve_hotels', array( $this, 'resolve' ) );
+        add_action( 'wp_ajax_nopriv_ssc_resolve_hotels', array( $this, 'resolve' ) );
     }
 
     /**
@@ -51,10 +51,10 @@ class CardBadge {
      * @return void
      */
     public function resolve() {
-        check_ajax_referer(self::NONCE_ACTION, 'nonce');
-        $ids = isset($_POST['ids']) ? array_map('intval', (array) wp_unslash($_POST['ids'])) : array();
-        $ids = array_slice(array_unique(array_filter($ids)), 0, self::MAX_IDS);
-        wp_send_json_success($this->resolve_ids($ids));
+        check_ajax_referer( self::NONCE_ACTION, 'nonce' );
+        $ids = isset( $_POST['ids'] ) ? array_map( 'intval', (array) wp_unslash( $_POST['ids'] ) ) : array();
+        $ids = array_slice( array_unique( array_filter( $ids ) ), 0, self::MAX_IDS );
+        wp_send_json_success( $this->resolve_ids( $ids ) );
     }
 
     /**
@@ -63,17 +63,17 @@ class CardBadge {
      * @param int[] $room_ids Room post IDs.
      * @return array<int,array{name:string,url:string|false}> Resolution map.
      */
-    private function resolve_ids($room_ids) {
+    private function resolve_ids( $room_ids ) {
         $map = array();
-        foreach ($room_ids as $room_id) {
-            if (get_post_type($room_id) !== 'estate_property') {
+        foreach ( $room_ids as $room_id ) {
+            if ( get_post_type( $room_id ) !== 'estate_property' ) {
                 continue;
             }
-            $hotel_id = Repository::get_room_hotel_id($room_id);
-            if ($hotel_id > 0 && get_post_status($hotel_id) === 'publish') {
-                $map[$room_id] = array(
-                    'name' => get_the_title($hotel_id),
-                    'url'  => get_permalink($hotel_id),
+            $hotel_id = Repository::get_room_hotel_id( $room_id );
+            if ( $hotel_id > 0 && get_post_status( $hotel_id ) === 'publish' ) {
+                $map[ $room_id ] = array(
+                    'name' => get_the_title( $hotel_id ),
+                    'url'  => get_permalink( $hotel_id ),
                 );
             }
         }

@@ -12,7 +12,7 @@
 
 namespace StaySuite\Companion\Frontend;
 
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
@@ -27,7 +27,7 @@ class PageSetup {
      * @return void
      */
     public function __construct() {
-        add_filter('body_class', array($this, 'add_hero_class'));
+        add_filter( 'body_class', array( $this, 'add_hero_class' ) );
     }
 
     /**
@@ -36,8 +36,8 @@ class PageSetup {
      * @param string[] $classes Body classes.
      * @return string[] Body classes with hero flag added when applicable.
      */
-    public function add_hero_class($classes) {
-        if (is_singular() && has_block('ssc/hero-search')) {
+    public function add_hero_class( $classes ) {
+        if ( is_singular() && has_block( 'ssc/hero-search' ) ) {
             $classes[] = 'ssc-has-hero';
         }
         return $classes;

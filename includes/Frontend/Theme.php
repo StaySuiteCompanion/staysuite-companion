@@ -14,7 +14,7 @@ namespace StaySuite\Companion\Frontend;
 
 use StaySuite\Companion\Admin\Settings;
 
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
@@ -33,18 +33,18 @@ class Theme {
      * @return string CSS custom properties.
      */
     public static function search_vars() {
-        if (Settings::get('color_mode') === 'custom') {
-            $submit = Settings::get('color_submit');
-            $hover = Settings::get('color_hover');
+        if ( Settings::get( 'color_mode' ) === 'custom' ) {
+            $submit = Settings::get( 'color_submit' );
+            $hover = Settings::get( 'color_hover' );
         } else {
             $submit = self::accent();
             $hover = self::accent_hover();
         }
         $css = sprintf(
             '--ssc-submit:%s;--ssc-submit-hover:%s;--ssc-search-icon:%s;',
-            esc_html($submit),
-            esc_html($hover),
-            esc_html($submit)
+            esc_html( $submit ),
+            esc_html( $hover ),
+            esc_html( $submit )
         );
         /**
          * Filter search-bar color variables (Pro: alternate mapping).
@@ -52,7 +52,7 @@ class Theme {
          * @param string $css    CSS custom properties.
          * @param string $submit Submit/icon hex.
          */
-        return apply_filters('ssc_search_vars', $css, $submit);
+        return apply_filters( 'ssc_search_vars', $css, $submit );
     }
     /**
      * Get the theme accent color.
@@ -60,7 +60,7 @@ class Theme {
      * @return string Hex color.
      */
     public static function accent() {
-        return self::option('wp_estate_main_color', '#e8905a');
+        return self::option( 'wp_estate_main_color', '#e8905a' );
     }
 
     /**
@@ -69,7 +69,7 @@ class Theme {
      * @return string Hex color.
      */
     public static function accent_hover() {
-        return self::option('wp_estate_hover_button_color', '#d17a45');
+        return self::option( 'wp_estate_hover_button_color', '#d17a45' );
     }
 
     /**
@@ -78,7 +78,7 @@ class Theme {
      * @return string Hex color.
      */
     public static function text() {
-        return self::option('wp_estate_font_color', '#5d6475');
+        return self::option( 'wp_estate_font_color', '#5d6475' );
     }
 
     /**
@@ -87,7 +87,7 @@ class Theme {
      * @return string Hex color.
      */
     public static function headings() {
-        return self::option('wp_estate_headings_color', '#2b2b2b');
+        return self::option( 'wp_estate_headings_color', '#2b2b2b' );
     }
 
     /**
@@ -97,9 +97,9 @@ class Theme {
      * @param string $fallback Fallback hex color.
      * @return string Sanitized hex color.
      */
-    private static function option($key, $fallback) {
-        $value = function_exists('wprentals_get_option') ? (string) wprentals_get_option($key, '') : '';
-        $hex = sanitize_hex_color($value);
+    private static function option( $key, $fallback ) {
+        $value = function_exists( 'wprentals_get_option' ) ? (string) wprentals_get_option( $key, '' ) : '';
+        $hex = sanitize_hex_color( $value );
         return $hex !== '' ? $hex : $fallback;
     }
 
@@ -111,11 +111,11 @@ class Theme {
     public static function inline_vars() {
         return sprintf(
             ':root{--ssc-accent:%s;--ssc-accent-hover:%s;--ssc-text:%s;--ssc-headings:%s;--ssc-hero-h:%dvh;%s}',
-            esc_html(self::accent()),
-            esc_html(self::accent_hover()),
-            esc_html(self::text()),
-            esc_html(self::headings()),
-            intval(Settings::get('hero_height')),
+            esc_html( self::accent() ),
+            esc_html( self::accent_hover() ),
+            esc_html( self::text() ),
+            esc_html( self::headings() ),
+            intval( Settings::get( 'hero_height' ) ),
             self::search_vars()
         );
     }
