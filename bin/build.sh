@@ -70,7 +70,16 @@ else
     # A shell that exports NODE_ENV=production would make npm skip
     # devDependencies, which is where @wordpress/scripts lives.
     (cd "$PLUGIN_DIR" && NODE_ENV=development npm ci --silent 2>/dev/null || NODE_ENV=development npm install --silent)
-    (cd "$PLUGIN_DIR" && npm run build)
+    # ...and the reverse trap: NODE_ENV=development here would ship unminified
+    # bundles plus source maps. Pin each mode to the step it belongs to.
+    # `npm run build` compiles the Sass in src/scss first, then the JS.
+    (cd "$PLUGIN_DIR" && NODE_ENV=production npm run build)
+fi
+
+# Guards the zip against a stylesheet that is missing or older than its source,
+# which is how a --skip-npm build ships stale styles.
+if [ -d "$PLUGIN_DIR/src/scss" ]; then
+    css_verify
 fi
 
 stage_and_zip "$VERSION" "$VENDOR_MODE"

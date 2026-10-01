@@ -17,13 +17,14 @@ VERSION_CONST="SSC_VERSION"
 PACKAGE_FILE="package.json"
 
 # Everything users need at runtime. Nothing else is copied into the zip.
+# Styles live in assets/build/css — Sass output from src/scss, built by
+# `npm run build:css`. There is no hand-written CSS to ship.
 PRODUCTION_PATHS=(
     "$MAIN_FILE"
     "$README_FILE"
     "includes"
     "templates"
     "assets/build"
-    "assets/css"
     "assets/js"
     "assets/images"
     "languages"
@@ -35,6 +36,7 @@ DEV_VENDOR_PATHS=(
     "vendor/squizlabs"
     "vendor/wp-coding-standards"
     "vendor/phpcsstandards"
+    "vendor/phpcompatibility"
     "vendor/dealerdirect"
     "vendor/bin"
 )
@@ -57,6 +59,7 @@ FORBIDDEN_IN_ZIP=(
     "tsconfig.json"
     ".DS_Store"
     ".map"
+    ".scss"
 )
 
 # Set to 1 by release.sh --dry-run so file edits become no-ops.
@@ -92,7 +95,7 @@ version_get() {
 
 # Current version from the runtime constant, used for update checks.
 version_get_constant() {
-    grep -m1 -E "^[[:space:]]*define\('$VERSION_CONST'," "$PLUGIN_DIR/$MAIN_FILE" \
+    grep -m1 -E "^[[:space:]]*define[[:space:]]*\([[:space:]]*'$VERSION_CONST'" "$PLUGIN_DIR/$MAIN_FILE" \
         | grep -oE "[0-9]+\.[0-9]+\.[0-9]+" || true
 }
 
@@ -134,7 +137,7 @@ version_sync() {
         sed_inplace "$PLUGIN_DIR/$MAIN_FILE" \
             "s|^([[:space:]]*\\*[[:space:]]*Version:[[:space:]]*)[0-9]+\\.[0-9]+\\.[0-9]+.*$|\\1$new|"
         sed_inplace "$PLUGIN_DIR/$MAIN_FILE" \
-            "s|(define\\('$VERSION_CONST',[[:space:]]*)'[^']+'([[:space:]]*\\))|\\1'$new'\\2|"
+            "s|(define[[:space:]]*\([[:space:]]*'$VERSION_CONST',[[:space:]]*)'[^']*'|\\1'$new'|"
     fi
 
     if [ -f "$PLUGIN_DIR/$README_FILE" ]; then
@@ -219,20 +222,24 @@ pro_changes_note() {
     printf '%s\n' "$changed" | sed 's/^/    /' >&2
 }
 
-# Fail loudly when the version in the header, the runtime constant and the
-# wp.org readme disagree. Any mismatch makes a shipped zip lie about itself.
+# Fail loudly when the version in the header, the runtime constant, the
+# wp.org readme and package.json disagree. Any mismatch makes a shipped zip
+# lie about itself. package.json belongs in this check because it drifts
+# silently: it sat a whole release behind the header unnoticed.
 version_verify() {
-    local header constant stable
+    local header constant stable packaged
     header="$(version_get)"
     constant="$(version_get_constant)"
     stable="$(grep -m1 -E '^Stable tag:' "$PLUGIN_DIR/$README_FILE" | awk '{print $3}' | tr -d '\r')"
+    packaged="$(grep -m1 -E '"version"' "$PLUGIN_DIR/$PACKAGE_FILE" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || true)"
 
     [ -n "$header" ] || die "No Version header in $MAIN_FILE"
     [ -n "$constant" ] || die "No define('$VERSION_CONST', ...) in $MAIN_FILE"
     [ -n "$stable" ] || die "No 'Stable tag:' in $README_FILE"
+    [ -n "$packaged" ] || die "No \"version\" in $PACKAGE_FILE"
 
-    if [ "$header" != "$constant" ] || [ "$header" != "$stable" ]; then
-        die "Version mismatch: header=$header constant=$constant readme=$stable. Fix with: bin/release.sh --sync-only"
+    if [ "$header" != "$constant" ] || [ "$header" != "$stable" ] || [ "$header" != "$packaged" ]; then
+        die "Version mismatch: header=$header constant=$constant readme=$stable package=$packaged. Fix with: bin/release.sh --sync-only"
     fi
 }
 
@@ -318,6 +325,28 @@ stage_vendor() {
     esac
 }
 
+# Compiled stylesheets, relative to the plugin root. Built from src/scss by
+# `npm run build:css`; nothing hand-written ships, so these must be present and
+# no older than their Sass sources.
+CSS_OUTPUTS=(
+    "assets/build/css/ssc-hotel.css"
+    "assets/build/css/ssc-admin.css"
+)
+
+css_verify() {
+    local output compiled stale
+    for output in "${CSS_OUTPUTS[@]}"; do
+        compiled="$PLUGIN_DIR/$output"
+        if [ ! -f "$compiled" ]; then
+            die "Missing compiled stylesheet $output. Run: npm run build:css"
+        fi
+        stale="$(find "$PLUGIN_DIR/src/scss" -name '*.scss' -newer "$compiled" -print -quit 2>/dev/null || true)"
+        if [ -n "$stale" ]; then
+            die "Compiled $output is older than ${stale#"$PLUGIN_DIR"/}. Run: npm run build:css"
+        fi
+    done
+}
+
 # Assemble the staging tree and zip it into dist/.
 stage_and_zip() {
     local version="$1" vendor_mode="$2"
@@ -361,6 +390,15 @@ stage_and_zip() {
 
     printf '%s\n' "$listed" | grep -q "$SLUG/$MAIN_FILE" \
         || die "Release zip is missing $MAIN_FILE"
+
+    # No stylesheet in the zip means no styles on the site, and the PHP that
+    # enqueues it fails silently, so make it a build error rather than a
+    # support ticket.
+    local css
+    for css in "${CSS_OUTPUTS[@]}"; do
+        printf '%s\n' "$listed" | grep -q "$SLUG/$css" \
+            || die "Release zip is missing $css — run npm run build:css"
+    done
 
     log "Built $(basename "$out") — $(printf '%s\n' "$listed" | wc -l | tr -d ' ') files, $(du -h "$out" | cut -f1 | tr -d ' ')"
     step "$PLUGIN_DIR/dist/$SLUG-$version.zip"

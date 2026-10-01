@@ -1,4 +1,11 @@
-/* StaySuite admin tab shell. */
+// StaySuite admin tab shell.
+//
+// Source. `npm run build:css` compiles it to assets/build/css/ssc-admin.css,
+// which the Hotels settings screen enqueues. Keep it small: the admin screen is
+// mostly the theme's own UI, and this only styles the plugin's own shell.
+
+@use 'breakpoints' as bp;
+
 .ssc-admin {
     max-width: 1100px;
 }
@@ -116,7 +123,7 @@
     font-weight: 600;
 }
 
-@media (max-width: 782px) {
+@media (max-width: bp.$bp-admin-bar) {
     .ssc-form-row {
         grid-template-columns: 1fr;
         gap: 6px;

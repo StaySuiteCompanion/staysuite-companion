@@ -1,0 +1,11 @@
+// Breakpoints, in the values the stylesheet already used.
+//
+// The scale is deliberately the set of widths this plugin actually reacts to
+// rather than a tidy 640/768/1024 ladder: these came from the theme's own
+// breakpoints, and matching them keeps the plugin's responsive behaviour
+// identical to what shipped before the move to Sass.
+$bp-sm: 640px; // phones
+$bp-md: 700px; // large phones
+$bp-lg: 768px; // tablets
+$bp-xl: 860px; // small laptops
+$bp-admin-bar: 782px; // core's own admin-bar breakpoint

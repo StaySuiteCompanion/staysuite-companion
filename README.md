@@ -19,10 +19,12 @@ Full user docs live in [`docs/`](docs/README.md). The wp.org listing file is [`r
 
 ```bash
 npm install
-npm run build   # wp-scripts → assets/build
+npm run build          # Sass → assets/build/css, then wp-scripts → assets/build
+npm run build:css      # styles only (compressed, what ships)
+npm run watch:css      # rebuild styles on save; pair with npm start
 ```
 
-PHP follows WordPress coding standards with PHPDoc everywhere; JS is React via `@wordpress/scripts`. No theme file is ever modified — overrides ship as plugin templates, styles and scripts.
+PHP follows WordPress coding standards with PHPDoc everywhere; JS is React via `@wordpress/scripts`; styles are **Sass only** — `src/scss` is the source, `assets/build/css` is generated, and there is no hand-written `.css` in the repository. No theme file is ever modified — overrides ship as plugin templates, styles and scripts. See [`docs/customization.md`](docs/customization.md) for the stylesheet workflow.
 
 ## Release
 

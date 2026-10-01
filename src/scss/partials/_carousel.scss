@@ -1,0 +1,88 @@
+@use '../breakpoints' as bp;
+
+/* ---------- Carousel ---------- */
+
+.ssc-carousel-root {
+    position: relative;
+}
+
+.ssc-carousel-track {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 8px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.ssc-carousel-track::-webkit-scrollbar {
+    display: none;
+}
+
+.ssc-carousel-track > * {
+    flex: 0 0 280px;
+    max-width: 280px;
+    scroll-snap-align: start;
+}
+
+.ssc-carousel-track .listing_wrapper {
+    width: 280px;
+}
+
+/* A row with fewer cards than fit per view (five destinations, say) used to
+   sit hard against the left edge with the remainder of the track empty, which
+   read as a broken left-aligned grid. Auto margins on zero-width flex
+   pseudo-items absorb that leftover space and centre the row; when the cards
+   overflow the track the margins collapse to zero, so scrolling and the
+   carousel arrows (which measure scrollWidth) behave exactly as before. */
+.ssc-tablets.ssc-carousel-track::before,
+.ssc-tablets.ssc-carousel-track::after {
+    content: '';
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.ssc-carousel-nav {
+    position: absolute;
+    top: 35%;
+    left: -56px;
+    right: -56px;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+}
+
+@media (max-width: bp.$bp-md) {
+    /* No room outside the track on phones — overlay the edges. */
+    .ssc-carousel-nav {
+        left: 0;
+        right: 0;
+    }
+}
+
+.ssc-carousel-prev,
+.ssc-carousel-next {
+    pointer-events: auto;
+    width: 56px;
+    height: 72px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    font-size: 48px;
+    font-weight: 200;
+    line-height: 1;
+    color: #fff;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.55);
+    cursor: pointer;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.ssc-carousel-prev:hover,
+.ssc-carousel-next:hover {
+    color: var(--ssc-accent, #137699);
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    transform: scale(1.08);
+}
+

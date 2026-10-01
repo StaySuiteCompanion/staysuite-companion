@@ -1,0 +1,84 @@
+/* ---------- Individual / Group switch ---------- */
+
+.ssc-mode {
+    margin-bottom: 18px;
+}
+
+.ssc-mode-toggle {
+    display: inline-flex;
+    gap: 4px;
+    background: #fff;
+    border-radius: 999px;
+    padding: 4px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+}
+
+.ssc-mode-toggle button {
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    padding: 10px 26px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ssc-text);
+    cursor: pointer;
+    transition: background 0.25s ease, color 0.25s ease;
+}
+
+.ssc-mode-toggle button.ssc-mode-active {
+    background: linear-gradient(90deg, var(--ssc-accent) 50%, var(--ssc-accent) 100%);
+    color: #fff;
+}
+
+.ssc-mode-form {
+    margin-top: 18px;
+}
+
+/* Smooth pop-out: the wrapper expands from zero height while the card
+   fades in with a slight rise. Exit is instant (node unmounts). */
+.ssc-mode-form-outside {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition:
+        grid-template-rows 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.35s ease;
+}
+
+.ssc-mode-form-outside.ssc-open {
+    grid-template-rows: 1fr;
+    opacity: 1;
+}
+
+.ssc-mode-form-outside > div {
+    overflow: hidden;
+    min-height: 0;
+}
+
+.ssc-mode-form-outside .ssc-mode-form {
+    margin-top: 0;
+    transform: translateY(-16px) scale(0.98);
+    transform-origin: top center;
+}
+
+.ssc-mode-form-outside.ssc-open .ssc-mode-form {
+    transform: none;
+    transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Animated collapse of the theme search bar in group mode. */
+
+.advanced_search_form_wrapper {
+    transition: opacity 0.35s ease, max-height 0.35s ease, margin 0.35s ease;
+    max-height: 500px;
+    overflow: hidden;
+}
+
+.advanced_search_form_wrapper.ssc-search-hidden {
+    opacity: 0;
+    max-height: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    pointer-events: none;
+}
+

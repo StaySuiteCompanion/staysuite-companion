@@ -1,0 +1,41 @@
+/* ---------- Hotel card ---------- */
+
+.ssc-hotel-card {
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.ssc-hotel-card-media {
+    display: block;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: #f0f0f0;
+}
+
+.ssc-hotel-card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ssc-hotel-card-body {
+    padding: 12px 14px 16px;
+}
+
+.ssc-hotel-card-title {
+    margin: 0 0 4px;
+    font-size: 17px;
+}
+
+.ssc-hotel-card-sub {
+    font-size: 13px;
+    opacity: 0.75;
+}
+
+.ssc-hotel-card-price {
+    margin-top: 6px;
+    font-weight: 700;
+}
+

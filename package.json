@@ -1,20 +1,24 @@
 {
   "name": "staysuite-companion",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "private": true,
   "description": "React frontend for the StaySuite Companion for WP Rentals plugin.",
   "author": "Tanmay Kirtania <jktanmay@gmail.com> (https://jktanmay.com)",
   "license": "GPL-3.0-or-later",
   "scripts": {
-    "build": "wp-scripts build",
-    "start": "wp-scripts start",
+    "build": "npm run build:css && wp-scripts build",
+    "build:css": "sass --no-charset --no-source-map --style=compressed --load-path=node_modules src/scss:assets/build/css",
+    "build:css:expanded": "sass --no-charset --no-source-map --style=expanded --load-path=node_modules src/scss:assets/build/css",
+    "watch:css": "sass --watch --no-charset --no-source-map --style=expanded --load-path=node_modules src/scss:assets/build/css",
+    "start": "npm run build:css && wp-scripts start",
     "build:dist": "bash bin/build.sh",
     "lint": "composer lint",
     "lint:fix": "vendor/bin/phpcbf",
     "release": "bash bin/release.sh"
   },
   "devDependencies": {
-    "@wordpress/scripts": "^27.9.0"
+    "@wordpress/scripts": "^27.9.0",
+    "sass": "^1.105.1"
   },
   "dependencies": {
     "@wordpress/server-side-render": "^6.32.0"

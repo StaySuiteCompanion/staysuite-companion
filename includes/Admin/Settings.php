@@ -17,7 +17,7 @@ use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
 
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
@@ -39,6 +39,15 @@ class Settings {
      * @var string
      */
     const MENU_SLUG = 'ssc-staysuite';
+
+    /**
+     * Compiled admin stylesheet, relative to the plugin root.
+     *
+     * Built from src/scss/ssc-admin.scss by `npm run build:css`.
+     *
+     * @var string
+     */
+    const ADMIN_STYLE = 'assets/build/css/ssc-admin.css';
 
     /**
      * Default values.
@@ -64,20 +73,20 @@ class Settings {
      * @param string|null $key Single key or null for all.
      * @return mixed Value or full array.
      */
-    public static function get($key = null) {
-        $all = wp_parse_args((array) get_option(self::OPTION, array()), self::defaults());
-        $all['capsule'] = !empty($all['capsule']) ? 1 : 0;
-        $all['dividers'] = !empty($all['dividers']) ? 1 : 0;
-        $all['animations'] = !empty($all['animations']) ? 1 : 0;
-        $all['default_adults'] = min(6, max(0, intval($all['default_adults'])));
-        $all['hero_height'] = min(100, max(30, intval($all['hero_height'])));
-        $all['color_mode'] = ($all['color_mode'] === 'custom') ? 'custom' : 'theme';
-        $all['color_submit'] = sanitize_hex_color((string) $all['color_submit']) ?: '#137699';
-        $all['color_hover'] = sanitize_hex_color((string) $all['color_hover']) ?: '#022947';
-        if ($key === null) {
+    public static function get( $key = null ) {
+        $all = wp_parse_args( (array) get_option( self::OPTION, array() ), self::defaults() );
+        $all['capsule'] = ! empty( $all['capsule'] ) ? 1 : 0;
+        $all['dividers'] = ! empty( $all['dividers'] ) ? 1 : 0;
+        $all['animations'] = ! empty( $all['animations'] ) ? 1 : 0;
+        $all['default_adults'] = min( 6, max( 0, intval( $all['default_adults'] ) ) );
+        $all['hero_height'] = min( 100, max( 30, intval( $all['hero_height'] ) ) );
+        $all['color_mode'] = ( $all['color_mode'] === 'custom' ) ? 'custom' : 'theme';
+        $all['color_submit'] = self::hex_or_default( $all['color_submit'], '#137699' );
+        $all['color_hover']  = self::hex_or_default( $all['color_hover'], '#022947' );
+        if ( $key === null ) {
             return $all;
         }
-        return array_key_exists($key, $all) ? $all[$key] : null;
+        return array_key_exists( $key, $all ) ? $all[ $key ] : null;
     }
 
     /**
@@ -86,19 +95,19 @@ class Settings {
      * @param array<string,mixed> $raw Raw input.
      * @return array<string,mixed> Sanitized settings.
      */
-    public static function sanitize($raw) {
-        if (!is_array($raw)) {
+    public static function sanitize( $raw ) {
+        if ( ! is_array( $raw ) ) {
             $raw = array();
         }
         return array(
-            'capsule'        => !empty($raw['capsule']) ? 1 : 0,
-            'default_adults' => isset($raw['default_adults']) ? min(6, max(0, intval($raw['default_adults']))) : 2,
-            'dividers'       => !empty($raw['dividers']) ? 1 : 0,
-            'animations'     => !empty($raw['animations']) ? 1 : 0,
-            'hero_height'    => isset($raw['hero_height']) ? min(100, max(30, intval($raw['hero_height']))) : 75,
-            'color_mode'     => (isset($raw['color_mode']) && $raw['color_mode'] === 'custom') ? 'custom' : 'theme',
-            'color_submit'   => isset($raw['color_submit']) ? (sanitize_hex_color((string) $raw['color_submit']) ?: '#137699') : '#137699',
-            'color_hover'    => isset($raw['color_hover']) ? (sanitize_hex_color((string) $raw['color_hover']) ?: '#022947') : '#022947',
+            'capsule'        => ! empty( $raw['capsule'] ) ? 1 : 0,
+            'default_adults' => isset( $raw['default_adults'] ) ? min( 6, max( 0, intval( $raw['default_adults'] ) ) ) : 2,
+            'dividers'       => ! empty( $raw['dividers'] ) ? 1 : 0,
+            'animations'     => ! empty( $raw['animations'] ) ? 1 : 0,
+            'hero_height'    => isset( $raw['hero_height'] ) ? min( 100, max( 30, intval( $raw['hero_height'] ) ) ) : 75,
+            'color_mode'     => ( isset( $raw['color_mode'] ) && $raw['color_mode'] === 'custom' ) ? 'custom' : 'theme',
+            'color_submit'   => self::hex_or_default( $raw['color_submit'] ?? '', '#137699' ),
+            'color_hover'    => self::hex_or_default( $raw['color_hover'] ?? '', '#022947' ),
         );
     }
 
@@ -106,11 +115,11 @@ class Settings {
      * Wire up hooks.
      */
     public function __construct() {
-        add_action('admin_menu', array($this, 'menu'));
-        add_action('admin_enqueue_scripts', array($this, 'admin_assets'));
-        add_action('rest_api_init', array($this, 'rest_routes'));
-        add_filter('body_class', array($this, 'body_classes'));
-        add_filter('submenu_file', array($this, 'highlight_tab'), 10, 2);
+        add_action( 'admin_menu', array( $this, 'menu' ) );
+        add_action( 'admin_enqueue_scripts', array( $this, 'admin_assets' ) );
+        add_action( 'rest_api_init', array( $this, 'rest_routes' ) );
+        add_filter( 'body_class', array( $this, 'body_classes' ) );
+        add_filter( 'submenu_file', array( $this, 'highlight_tab' ), 10, 2 );
     }
 
     /**
@@ -123,32 +132,47 @@ class Settings {
      */
     public function menu() {
         add_menu_page(
-            esc_html__('StaySuite', 'staysuite-companion'),
-            esc_html__('StaySuite', 'staysuite-companion'),
+            esc_html__( 'StaySuite', 'staysuite-companion' ),
+            esc_html__( 'StaySuite', 'staysuite-companion' ),
             'manage_options',
             self::MENU_SLUG,
-            array($this, 'render_page'),
+            array( $this, 'render_page' ),
             self::logo_icon(),
             26
         );
         add_submenu_page(
             self::MENU_SLUG,
-            esc_html__('Settings', 'staysuite-companion'),
-            esc_html__('Settings', 'staysuite-companion'),
+            esc_html__( 'Settings', 'staysuite-companion' ),
+            esc_html__( 'Settings', 'staysuite-companion' ),
             'manage_options',
             self::MENU_SLUG . '&tab=settings',
-            array($this, 'render_page')
+            array( $this, 'render_page' )
         );
-        if (!defined('SSC_PRO_VERSION')) {
+        if ( ! defined( 'SSC_PRO_VERSION' ) ) {
             add_submenu_page(
                 self::MENU_SLUG,
-                esc_html__('Go Pro', 'staysuite-companion'),
-                esc_html__('Go Pro', 'staysuite-companion'),
+                esc_html__( 'Go Pro', 'staysuite-companion' ),
+                esc_html__( 'Go Pro', 'staysuite-companion' ),
                 'manage_options',
                 self::MENU_SLUG . '&tab=go-pro',
-                array($this, 'render_page')
+                array( $this, 'render_page' )
             );
         }
+    }
+
+    /**
+     * Sanitize a hex color, falling back to a default.
+     *
+     * @param mixed  $value    Raw color.
+     * @param string $fallback Color used when the value is not a hex color.
+     * @return string Valid hex color or the fallback.
+     */
+    private static function hex_or_default( $value, $fallback ) {
+        if ( ! is_string( $value ) ) {
+            return $fallback;
+        }
+        $color = sanitize_hex_color( $value );
+        return ( $color === null || $color === '' ) ? $fallback : $color;
     }
 
     /**
@@ -158,12 +182,14 @@ class Settings {
      * @param string       $parent_file  Current parent file.
      * @return string|false Submenu file with tab suffix when applicable.
      */
-    public function highlight_tab($submenu_file, $parent_file) {
-        if ($parent_file !== self::MENU_SLUG || !isset($_GET['tab'])) {
+    public function highlight_tab( $submenu_file, $parent_file ) {
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only menu highlight; the Settings screen itself is capability + nonce protected.
+        if ( $parent_file !== self::MENU_SLUG || ! isset( $_GET['tab'] ) ) {
             return $submenu_file;
         }
-        $tab = sanitize_key(wp_unslash($_GET['tab']));
-        if (!in_array($tab, array('settings', 'go-pro'), true)) {
+        $tab = sanitize_key( wp_unslash( $_GET['tab'] ) );
+        // phpcs:enable WordPress.Security.NonceVerification.Recommended
+        if ( ! in_array( $tab, array( 'settings', 'go-pro' ), true ) ) {
             return $submenu_file;
         }
         return self::MENU_SLUG . '&tab=' . $tab;
@@ -176,11 +202,16 @@ class Settings {
      */
     public static function logo_icon() {
         static $icon = null;
-        if ($icon === null) {
+        if ( $icon === null ) {
             $svg = SSC_PATH . 'assets/images/staysuite-logo-menu.svg';
-            $icon = is_readable($svg)
-                ? 'data:image/svg+xml;base64,' . base64_encode((string) file_get_contents($svg))
-                : 'dashicons-admin-generic';
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reads a bundled local file, not a remote URL.
+            $contents = is_readable( $svg ) ? file_get_contents( $svg ) : false;
+            if ( is_string( $contents ) ) {
+                // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Data URI for a local SVG menu icon, not obfuscated code.
+                $icon = 'data:image/svg+xml;base64,' . base64_encode( $contents );
+            } else {
+                $icon = 'dashicons-admin-generic';
+            }
         }
         return $icon;
     }
@@ -193,8 +224,8 @@ class Settings {
     public function render_page() {
         printf(
             '<div id="ssc-admin-root" data-pro="%d" data-logo="%s"></div>',
-            defined('SSC_PRO_VERSION') ? 1 : 0,
-            esc_url(SSC_URL . 'assets/images/staysuite-logo.svg')
+            defined( 'SSC_PRO_VERSION' ) ? 1 : 0,
+            esc_url( SSC_URL . 'assets/images/staysuite-logo.svg' )
         );
     }
 
@@ -204,8 +235,8 @@ class Settings {
      * @param string $hook Current admin page hook.
      * @return void
      */
-    public function admin_assets($hook) {
-        if ($hook !== 'toplevel_page_' . self::MENU_SLUG) {
+    public function admin_assets( $hook ) {
+        if ( $hook !== 'toplevel_page_' . self::MENU_SLUG ) {
             return;
         }
         $asset = $this->app_asset();
@@ -218,7 +249,7 @@ class Settings {
         );
         wp_enqueue_style(
             'ssc-admin',
-            SSC_URL . 'assets/css/ssc-admin.css',
+            SSC_URL . self::ADMIN_STYLE,
             array(),
             $this->css_version()
         );
@@ -230,18 +261,21 @@ class Settings {
      * @return array{dependencies: string[], version: string} Asset data.
      */
     private function app_asset() {
-        $fallback = array('dependencies' => array('wp-element', 'wp-hooks', 'wp-api-fetch', 'wp-i18n', 'wp-components'), 'version' => SSC_VERSION);
+        $fallback = array(
+			'dependencies' => array( 'wp-element', 'wp-hooks', 'wp-api-fetch', 'wp-i18n', 'wp-components' ),
+			'version' => SSC_VERSION,
+		);
         $path = SSC_PATH . 'assets/build/admin.asset.php';
-        if (!file_exists($path)) {
+        if ( ! file_exists( $path ) ) {
             return $fallback;
         }
         $asset = include $path;
-        if (!is_array($asset)) {
+        if ( ! is_array( $asset ) ) {
             return $fallback;
         }
         return array(
-            'dependencies' => isset($asset['dependencies']) ? (array) $asset['dependencies'] : $fallback['dependencies'],
-            'version'      => isset($asset['version']) ? (string) $asset['version'] : SSC_VERSION,
+            'dependencies' => isset( $asset['dependencies'] ) ? (array) $asset['dependencies'] : $fallback['dependencies'],
+            'version'      => isset( $asset['version'] ) ? (string) $asset['version'] : SSC_VERSION,
         );
     }
 
@@ -251,11 +285,11 @@ class Settings {
      * @return string Cache-busting version.
      */
     private function css_version() {
-        $path = SSC_PATH . 'assets/css/ssc-admin.css';
-        if (file_exists($path)) {
-            $hash = md5_file($path);
-            if (is_string($hash) && $hash !== '') {
-                return substr($hash, 0, 12);
+        $path = SSC_PATH . self::ADMIN_STYLE;
+        if ( file_exists( $path ) ) {
+            $hash = md5_file( $path );
+            if ( is_string( $hash ) && $hash !== '' ) {
+                return substr( $hash, 0, 12 );
             }
         }
         return SSC_VERSION;
@@ -267,18 +301,20 @@ class Settings {
      * @return void
      */
     public function rest_routes() {
-        register_rest_route('ssc/v1', '/settings', array(
-            array(
-                'methods'             => 'GET',
-                'callback'            => array($this, 'rest_get'),
-                'permission_callback' => array($this, 'rest_auth'),
-            ),
-            array(
-                'methods'             => 'POST',
-                'callback'            => array($this, 'rest_save'),
-                'permission_callback' => array($this, 'rest_auth'),
-            ),
-        ));
+        register_rest_route(
+            'ssc/v1', '/settings', array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( $this, 'rest_get' ),
+					'permission_callback' => array( $this, 'rest_auth' ),
+				),
+				array(
+					'methods'             => 'POST',
+					'callback'            => array( $this, 'rest_save' ),
+					'permission_callback' => array( $this, 'rest_auth' ),
+				),
+            )
+        );
     }
 
     /**
@@ -287,7 +323,7 @@ class Settings {
      * @return bool True for admins.
      */
     public function rest_auth() {
-        return current_user_can('manage_options');
+        return current_user_can( 'manage_options' );
     }
 
     /**
@@ -296,7 +332,7 @@ class Settings {
      * @return WP_REST_Response Settings payload.
      */
     public function rest_get() {
-        return new WP_REST_Response(array('settings' => self::get()), 200);
+        return new WP_REST_Response( array( 'settings' => self::get() ), 200 );
     }
 
     /**
@@ -305,13 +341,13 @@ class Settings {
      * @param WP_REST_Request $request REST request.
      * @return WP_REST_Response|WP_Error Fresh settings or error.
      */
-    public function rest_save($request) {
-        $raw = $request->get_param('settings');
-        if (!is_array($raw)) {
-            return new WP_Error('ssc_bad_settings', esc_html__('Settings payload missing.', 'staysuite-companion'), array('status' => 400));
+    public function rest_save( $request ) {
+        $raw = $request->get_param( 'settings' );
+        if ( ! is_array( $raw ) ) {
+            return new WP_Error( 'ssc_bad_settings', esc_html__( 'Settings payload missing.', 'staysuite-companion' ), array( 'status' => 400 ) );
         }
-        update_option(self::OPTION, self::sanitize($raw));
-        return new WP_REST_Response(array('settings' => self::get()), 200);
+        update_option( self::OPTION, self::sanitize( $raw ) );
+        return new WP_REST_Response( array( 'settings' => self::get() ), 200 );
     }
 
     /**
@@ -320,14 +356,14 @@ class Settings {
      * @param string[] $classes Body classes.
      * @return string[] Classes with flags added.
      */
-    public function body_classes($classes) {
-        if (is_admin()) {
+    public function body_classes( $classes ) {
+        if ( is_admin() ) {
             return $classes;
         }
-        if (!self::get('dividers')) {
+        if ( ! self::get( 'dividers' ) ) {
             $classes[] = 'ssc-no-dividers';
         }
-        if (!self::get('animations')) {
+        if ( ! self::get( 'animations' ) ) {
             $classes[] = 'ssc-no-animations';
         }
         return $classes;

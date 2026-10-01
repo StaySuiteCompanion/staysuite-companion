@@ -1,0 +1,42 @@
+/* ---------- Transparent overlay header (StaySuite Homepage template) ---------- */
+/* Overlay only while NOT stuck: once the theme pins .navbar-fixed-top on
+   scroll, its own sticky styling (solid background) takes over. */
+body.ssc-homepage .header_wrapper:not(.navbar-fixed-top) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+body.ssc-homepage .mobile_header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+/* Header inner layout stays 100% theme-native (overlay + sticky). */
+
+body.ssc-homepage .top_bar_wrapper {
+    display: none !important;
+}
+
+/* Logged-in admin bar. The theme already shifts the whole document for it
+   (body.admin-bar { margin-top: 32px } in its stylesheet, and
+   .admin-bar .header_wrapper.customnav for the header once the theme pins it
+   on scroll). The overlay header is position: absolute inside that shifted
+   document, so adding a top offset here too counted the admin bar twice and
+   opened a 32px gap under it. Nothing to push: the theme's margin does it.
+   Restated with core's variable so the height stays correct on small screens,
+   where the admin bar is taller, instead of hardcoding a second number. */
+body.admin-bar.ssc-homepage {
+    margin-top: var(--wp-admin--admin-bar--height, 32px);
+}

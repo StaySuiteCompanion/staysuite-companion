@@ -1,0 +1,33 @@
+// StaySuite Companion for WP Rentals — hotel styles (theme-agnostic, prefixed).
+//
+// This is the source. `npm run build:css` compiles it to
+// assets/build/css/ssc-hotel.css, which is what the plugin enqueues; never
+// edit the compiled file, and never add a hand-written .css to the repository.
+//
+// The stylesheet is one flat cascade, so the partials are split by feature and
+// loaded in the order they must cascade in — a later partial may deliberately
+// override an earlier one, so do not reorder them without re-checking the
+// result on a real page.
+//
+// Colour and spacing tokens are CSS custom properties (see Theme::inline_vars()
+// and the --ssc-* fallbacks below); only breakpoints need Sass variables,
+// because they cannot be read from CSS at compile time.
+
+@use 'breakpoints' as bp;
+@use 'partials/base';
+@use 'partials/homepage-rows';
+@use 'partials/tablets';
+@use 'partials/carousel';
+@use 'partials/cards';
+@use 'partials/hero';
+@use 'partials/search-mode';
+@use 'partials/group-booking';
+@use 'partials/hero-page';
+@use 'partials/homepage-template';
+@use 'partials/features';
+@use 'partials/payments';
+@use 'partials/hotel-single';
+@use 'partials/search-strip';
+@use 'partials/editor-preview';
+@use 'partials/options';
+@use 'partials/header';

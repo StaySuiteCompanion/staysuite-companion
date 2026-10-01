@@ -1,0 +1,46 @@
+/* ---------- StaySuite Homepage page template ---------- */
+
+.ssc-homepage-template {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+/* Fallback container. The StaySuite Homepage template wraps its content in
+   .ssc-homepage-template, which is what centres the sections below the cover.
+   A front page left on the theme's default template gets no wrapper, so the
+   cards run edge to edge and read as off-centre. Constrain them directly in
+   that case so the sections centre themselves wherever the blocks are used.
+   The hero is deliberately absent: it must stay full-bleed. */
+body:not(.ssc-homepage) .ssc-tablets,
+body:not(.ssc-homepage) .ssc-row,
+body:not(.ssc-homepage) .ssc-features,
+body:not(.ssc-homepage) .ssc-payments,
+.ssc-preview .ssc-tablets,
+.ssc-preview .ssc-row,
+.ssc-preview .ssc-features,
+.ssc-preview .ssc-payments {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+/* Hairline divider after each homepage section (hero excluded; the
+   payment strip sits against the tinted footer, so it gets air, not a
+   divider). */
+body.ssc-homepage .ssc-tablets,
+body.ssc-homepage .ssc-row,
+body.ssc-homepage .ssc-features {
+    border-bottom: 1px solid #e8ebee;
+    padding-bottom: 28px;
+    margin-bottom: 28px;
+}
+
+body.ssc-homepage .ssc-payments {
+    margin-top: 40px;
+}
+

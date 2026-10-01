@@ -19,17 +19,18 @@ bin/build.sh [version] [--lint] [--skip-npm] [--vendor=copy]
 
 1. Verifies that the plugin header, `define('SSC_VERSION', …)` and `readme.txt` `Stable tag:` all agree.
 2. Optionally runs `composer lint` (`--lint`).
-3. `npm ci` + `npm run build` (skipped with `--skip-npm`). It forces `NODE_ENV=development` because a shell that exports `NODE_ENV=production` makes npm skip the devDependencies where `@wordpress/scripts` lives.
-4. Stages the production paths into a temp tree, runs `composer install --no-dev --optimize-autoloader` **inside the stage** (so `composer lint` still works locally afterwards), prunes editor cruft, zips into `dist/staysuite-companion-{version}.zip`.
-5. Fails the build if any development path shows up in the zip listing.
+3. `npm ci` + `npm run build` (skipped with `--skip-npm`). `npm run build` compiles `src/scss` to `assets/build/css` first, then bundles the JS. It forces `NODE_ENV=development` for the install because a shell that exports `NODE_ENV=production` makes npm skip the devDependencies where `@wordpress/scripts` and `sass` live.
+4. Fails if a compiled stylesheet is missing or older than its Sass source, so a `--skip-npm` build cannot ship stale styles.
+5. Stages the production paths into a temp tree, runs `composer install --no-dev --optimize-autoloader` **inside the stage** (so `composer lint` still works locally afterwards), prunes editor cruft, zips into `dist/staysuite-companion-{version}.zip`.
+6. Fails the build if any development path shows up in the zip listing, or if a compiled stylesheet did not make it in.
 
 ### Ships
 
-`staysuite-companion.php`, `readme.txt`, `includes/`, `templates/`, `assets/build/`, `assets/css/`, `assets/js/`, `assets/images/`, `languages/`, `vendor/` (production only).
+`staysuite-companion.php`, `readme.txt`, `includes/`, `templates/`, `assets/build/` (JS **and** `css/`, the Sass output), `assets/js/`, `assets/images/`, `languages/`, `vendor/` (production only). No `.scss` and no `.css` source ever ships.
 
 ### Never ships
 
-`src/`, `node_modules/`, `docs/`, `bin/`, `dist/`, `plan/`, `CHANGELOG.d/`, `README.md`, `package*.json`, `composer*.json`, `webpack.config.js`, `phpcs.xml`, `.gitattributes`, source maps and `.DS_Store`.
+`src/` (including `src/scss`), `node_modules/`, `docs/`, `bin/`, `dist/`, `plan/`, `CHANGELOG.d/`, `README.md`, `package*.json`, `composer*.json`, `webpack.config.js`, `phpcs.xml`, `.gitattributes`, `.scss`, source maps and `.DS_Store`.
 
 The same list is mirrored in `.gitattributes` (`export-ignore`), so GitHub's source zip and `git archive` stay lean too. `bin/lib.sh` is the source of truth — add a path there and in `.gitattributes` together.
 

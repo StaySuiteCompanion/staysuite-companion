@@ -6,17 +6,20 @@ Instructions for AI coding agents (and humans) working in this repository.
 
 A companion plugin for the [WP Rentals](https://themeforest.net/item/wprentals-booking-accommodation-wordpress-theme/12332978) theme. It adds a **hotel layer** on top of the theme's existing listings (rooms): a `ssc_hotel` post type, five homepage blocks, and a group quote flow.
 
-**The one rule that shapes everything: never modify a theme file.** Every override ships inside this plugin — templates via `PageTemplate`, styles in `assets/css`, scripts in `assets/build`. If something seems to need a theme edit, it needs a `theme_page_templates` filter, a `template_include` filter, or a `wp_add_inline_style` call instead.
+**The one rule that shapes everything: never modify a theme file.** Every override ships inside this plugin — templates via `PageTemplate`, styles built from `src/scss` into `assets/build/css`, scripts in `assets/build`. If something seems to need a theme edit, it needs a `theme_page_templates` filter, a `template_include` filter, or a `wp_add_inline_style` call instead.
 
 ## Commands
 
 ```bash
 composer install          # dev deps (phpcs + WPCS)
-npm install               # @wordpress/scripts
+npm install               # @wordpress/scripts + sass
 
 composer lint             # PHPCS (WordPress standard)
 vendor/bin/phpcbf         # auto-fix what can be fixed
-npm run build             # dev build → assets/build
+npm run build             # dev build: Sass → assets/build/css, then JS → assets/build
+npm run build:css         # Sass only, compressed (what ships)
+npm run build:css:expanded  # Sass only, readable — for debugging compiled output
+npm run watch:css         # rebuild styles on save; pair with npm start
 npm run build:dist        # production zip → dist/
 
 bin/build.sh              # minimal production zip
@@ -28,7 +31,7 @@ bin/release.sh --dry-run  # show every step, change nothing
 
 Two skills in `.claude/skills/` cover the release and changelog work in depth — read them before shipping: `wp-plugin-release`, `wp-changelog`.
 
-Note: `npm run build` needs `NODE_ENV=development`. A shell that exports `NODE_ENV=production` makes npm skip devDependencies, where `@wordpress/scripts` lives, and the build fails confusingly. `bin/build.sh` forces it.
+Note: `npm run build` needs `NODE_ENV=development`. A shell that exports `NODE_ENV=production` makes npm skip devDependencies, where `@wordpress/scripts` and `sass` live, and the build fails confusingly. `bin/build.sh` forces it.
 
 ## Architecture
 
@@ -41,13 +44,14 @@ Note: `npm run build` needs `NODE_ENV=development`. A shell that exports `NODE_E
 | Frontend | `includes/Frontend/` | Page template, template loader, scripts, theme integration |
 | Admin | `includes/Admin/` | Settings, room assignment, term image/repair tools |
 | Install | `includes/Installer.php` | Activation checks, DB flush, `vs_*` → `ssc_*` migration |
-| UI assets | `assets/` | Compiled JS (`build/`), hand-written CSS, theme logos |
+| Styles | `src/scss/` | Sass source — one partial per feature, compiled to `assets/build/css` |
+| UI assets | `assets/` | Compiled JS (`build/`), Sass output (`build/css/`), vanilla `js/`, theme logos |
 
 Classes are namespaced `StaySuite\Companion\…` and autoloaded by classmap (`composer.json` → `includes/`). Instantiate them in `Plugin::instantiate()`; shared ones live in the container.
 
 ## Coding rules
 
-- **WordPress coding standards, no exceptions.** Tabs, spaces inside parentheses, Yoda conditions, one blank line before returns, PHPDoc on every class and method with `@package` and `@author`. Run `composer lint` before committing.
+- **`phpcs.xml` is the style authority — read it, do not guess.** `composer lint` runs it and must be clean before committing; `vendor/bin/phpcbf` fixes most of it. The ruleset is `WordPress-Extra` + `WordPress` (PHP 7.4+ and the minimum supported WP version are both checked), with these deliberate exceptions: 4-space indentation instead of tabs, no `in_array()` strictness excuse, no squizbling of short arrays or ternaries without reason, and `// phpcs:ignore` only with a `--` reason. PHPDoc on every class and method with `@package` and `@author`.
 - **Namespace every hook** — these are the public seams the Pro add-on builds on, so renaming one is a breaking change. PHP actions and filters take `ssc_` plus a descriptive name (`ssc_room_card_actions`, `ssc_quote_payload`, `ssc_group_request_saved`); the admin tab registry is a JS filter, `ssc.admin.tabs`. Shortcodes are `ssc_*`, blocks `ssc/*`, REST routes `ssc/v1/*`. Document every new one in `docs/hooks.md`.
 - **Prefixes:** `ssc_` functions and meta (`_ssc_`), `SSC_` constants (`SSC_VERSION`, `SSC_PATH`, `SSC_URL`). Text domain `staysuite-companion`.
 - **Escape on output** (`esc_html`, `esc_attr`, `esc_url`, `wp_kses_post`), **prepare on input** (`$wpdb->prepare` for every query, `sanitize_*` for every field), **nonce every** AJAX and REST route.
@@ -55,6 +59,7 @@ Classes are namespaced `StaySuite\Companion\…` and autoloaded by classmap (`co
 - **SQL:** use `$wpdb->prepare`. Direct queries need a `phpcs:disable WordPress.DB.DirectDatabaseQuery` comment explaining why.
 - **Never enqueue from a CDN.** Register scripts and styles with the plugin, with explicit dependencies and version `SSC_VERSION`.
 - **JS/React:** `@wordpress/scripts`, components in `src/`, output in `assets/build/`. Use `wp.element`, the `@wordpress/*` packages and `wp.apiFetch` — no jQuery, no new runtime dependencies. Each screen gets its own script handle in `Frontend/Scripts.php`.
+- **Styles are Sass only — never add or edit a `.css` file.** `src/scss/ssc-hotel.scss` and `src/scss/ssc-admin.scss` are the sources; `assets/build/css/*.css` is generated output. Edit a partial, run `npm run build:css`, and commit the compiled file alongside the source. Colours and spacing stay CSS custom properties (the customizer overrides them at runtime); only breakpoints are Sass variables, in `src/scss/_breakpoints.scss`. The stylesheet is one flat cascade, so `@use` order in the entry file is load-bearing — a later partial may deliberately override an earlier one. Enqueue paths go through the `Scripts::HOTEL_STYLE` and `Settings::ADMIN_STYLE` constants, never a literal path.
 - **Blocks** are dynamically registered in `Blocks/Registry.php` with server-side rendering; editor previews go through `ssc/v1/preview`.
 
 ## Data and compatibility
@@ -81,7 +86,7 @@ Classes are namespaced `StaySuite\Companion\…` and autoloaded by classmap (`co
 ## Before you finish
 
 1. `composer lint` — new violations are not acceptable.
-2. `npm run build` — the committed `assets/build/` must match `src/`.
+2. `npm run build` — the committed `assets/build/` must match `src/`, including `assets/build/css/` from `src/scss/`.
 3. `bin/build.sh` — confirm the zip contains only runtime files and still activates.
 4. Update `docs/` when behaviour or a hook changes; update `readme.txt` only when the plugin page should say something new.
 5. Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`) — the changelog tooling reads them.

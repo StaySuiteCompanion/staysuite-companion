@@ -18,3 +18,4 @@
 /phpcs.xml export-ignore
 /README.md export-ignore
 *.map export-ignore
+*.scss export-ignore
