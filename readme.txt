@@ -4,7 +4,7 @@ Tags: wp rentals, hotel, booking, group booking, gutenberg blocks
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 0.2.0
+Stable tag: 0.2.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -26,7 +26,7 @@ Built for the [WP Rentals](https://themeforest.net/item/wprentals-booking-accomm
 1. Make sure the WP Rentals theme is installed and active.
 2. Upload `staysuite-companion` to `/wp-content/plugins/` and activate it (or install from Plugins → Add New once listed).
 3. Create Hotels under the new Hotels menu and assign rooms to them (room edit screen → Hotel box, Quick Edit, or Hotels → Assign Rooms).
-4. Build your homepage with the StaySuite blocks, or use the shortcodes below.
+4. Open the **Homepage - StaySuite** page created on activation, edit its blocks, and set it as the static homepage under Settings → Reading. Or build your own page and pick the **StaySuite Homepage** template in Page Attributes.
 
 == Frequently Asked Questions ==
 
@@ -50,7 +50,6 @@ Against the theme's own booking engine (`wpestate_check_booking_valability`), pe
 == Changelog ==
 
 = 0.2.0 =
-* Renamed from Varsity Surfers Companion to StaySuite Companion for WP Rentals (automatic data migration included).
 * Hotel pages: gallery cover, facilities aggregation, theme-native search strip, availability badges, Leaflet map.
 * Original (was) price display on hotel room cards.
 * Quick Edit hotel assignment for rooms.

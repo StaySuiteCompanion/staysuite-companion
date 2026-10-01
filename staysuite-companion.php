@@ -5,7 +5,7 @@
  * Plugin URI: https://jktanmay.com
  * Author: Tanmay Kirtania
  * Author URI: https://jktanmay.com
- * Version: 0.2.0
+ * Version: 0.2.1
  * License: GPL-3.0-or-later
  * Text Domain: staysuite-companion
  * Domain Path: /languages
@@ -27,16 +27,16 @@ use StaySuite\Companion\Hotel\HotelCPT;
 use StaySuite\Companion\Hotel\RoomLink;
 
 // Don't call the file directly.
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-define('SSC_VERSION', '0.2.0');
-define('SSC_FILE', __FILE__);
-define('SSC_PATH', plugin_dir_path(__FILE__));
-define('SSC_URL', plugin_dir_url(__FILE__));
+define( 'SSC_VERSION', '0.2.1' );
+define( 'SSC_FILE', __FILE__ );
+define( 'SSC_PATH', plugin_dir_path( __FILE__ ) );
+define( 'SSC_URL', plugin_dir_url( __FILE__ ) );
 
 /**
  * Main plugin class.
@@ -80,7 +80,7 @@ final class Plugin {
      * @return Plugin Single instance of this class.
      */
     public static function init() {
-        if (!isset(self::$instance) || !(self::$instance instanceof Plugin)) {
+        if ( ! isset( self::$instance ) || ! ( self::$instance instanceof Plugin ) ) {
             self::$instance = new Plugin();
             self::$instance->setup();
         }
@@ -93,16 +93,15 @@ final class Plugin {
      * @return void
      */
     private function setup() {
-        if (!$this->is_supported_php()) {
-            add_action('admin_notices', array($this, 'php_version_notice'));
+        if ( ! $this->is_supported_php() ) {
+            add_action( 'admin_notices', array( $this, 'php_version_notice' ) );
             return;
         }
 
-        $this->includes();
         $this->instantiate();
         $this->init_actions();
 
-        do_action('ssc_loaded');
+        do_action( 'ssc_loaded' );
     }
 
     /**
@@ -111,9 +110,9 @@ final class Plugin {
      * @param string $prop Instance key.
      * @return mixed Instance or null when unknown.
      */
-    public function __get($prop) {
-        if (array_key_exists($prop, $this->container)) {
-            return $this->container[$prop];
+    public function __get( $prop ) {
+        if ( array_key_exists( $prop, $this->container ) ) {
+            return $this->container[ $prop ];
         }
         return null;
     }
@@ -124,8 +123,8 @@ final class Plugin {
      * @param string $prop Instance key.
      * @return bool Whether the instance exists.
      */
-    public function __isset($prop) {
-        return isset($this->container[$prop]);
+    public function __isset( $prop ) {
+        return isset( $this->container[ $prop ] );
     }
 
     /**
@@ -134,7 +133,7 @@ final class Plugin {
      * @return bool True when supported.
      */
     public function is_supported_php() {
-        return version_compare(PHP_VERSION, $this->min_php, '>=');
+        return version_compare( PHP_VERSION, $this->min_php, '>=' );
     }
 
     /**
@@ -148,24 +147,11 @@ final class Plugin {
             esc_html(
                 sprintf(
                     /* translators: %s: minimum PHP version */
-                    __('StaySuite Companion for WP Rentals requires PHP %s or newer.', 'staysuite-companion'),
+                    __( 'StaySuite Companion for WP Rentals requires PHP %s or newer.', 'staysuite-companion' ),
                     $this->min_php
                 )
             )
         );
-    }
-
-    /**
-     * Include non-autoloaded files.
-     *
-     * Domain classes load through the Composer autoloader.
-     *
-     * @return void
-     */
-    private function includes() {
-        if (is_admin()) {
-            // Admin-only function files can be required here.
-        }
     }
 
     /**
@@ -183,6 +169,7 @@ final class Plugin {
         $this->container['scripts']         = new Scripts();
         $this->container['page_setup']      = new Frontend\PageSetup();
         $this->container['settings']        = new Admin\Settings();
+        $this->container['homepage_setup']  = new Admin\HomepageSetup();
         $this->container['blocks']          = new Blocks\Registry();
         $this->container['block_preview']   = new Blocks\PreviewEndpoint();
         $this->container['patterns']        = new Blocks\Patterns();
@@ -191,7 +178,7 @@ final class Plugin {
         $this->container['quote_form']       = new Booking\QuoteForm();
         $this->container['quote_ajax']       = new Booking\QuoteAjax();
 
-        if (is_admin()) {
+        if ( is_admin() ) {
             $this->container['assign_page'] = new AssignPage();
             $this->container['term_repair'] = new Admin\TermRepair();
             $this->container['term_image'] = new Admin\TermImage();
@@ -204,10 +191,10 @@ final class Plugin {
      * @return void
      */
     private function init_actions() {
-        add_action('init', array($this, 'localization_setup'));
-        add_action('init', array(__NAMESPACE__ . '\Installer', 'maybe_migrate'), 5);
-        add_filter('plugin_action_links_' . plugin_basename(SSC_FILE), array($this, 'plugin_action_links'));
-        add_action('admin_notices', array($this, 'theme_check_notice'));
+        add_action( 'init', array( $this, 'localization_setup' ) );
+        add_action( 'init', array( __NAMESPACE__ . '\Installer', 'maybe_migrate' ), 5 );
+        add_filter( 'plugin_action_links_' . plugin_basename( SSC_FILE ), array( $this, 'plugin_action_links' ) );
+        add_action( 'admin_notices', array( $this, 'theme_check_notice' ) );
     }
 
     /**
@@ -219,7 +206,7 @@ final class Plugin {
         load_plugin_textdomain(
             'staysuite-companion',
             false,
-            dirname(plugin_basename(SSC_FILE)) . '/languages/'
+            dirname( plugin_basename( SSC_FILE ) ) . '/languages/'
         );
     }
 
@@ -229,9 +216,9 @@ final class Plugin {
      * @param string[] $links Existing action links.
      * @return string[] Links with companion pages added.
      */
-    public function plugin_action_links($links) {
-        $links[] = '<a href="' . esc_url(admin_url('edit.php?post_type=' . HotelCPT::POST_TYPE)) . '">'
-            . esc_html__('Hotels', 'staysuite-companion') . '</a>';
+    public function plugin_action_links( $links ) {
+        $links[] = '<a href="' . esc_url( admin_url( 'edit.php?post_type=' . HotelCPT::POST_TYPE ) ) . '">'
+            . esc_html__( 'Hotels', 'staysuite-companion' ) . '</a>';
         return $links;
     }
 
@@ -241,9 +228,9 @@ final class Plugin {
      * @return void
      */
     public function theme_check_notice() {
-        if (get_template() !== 'wprentals') {
+        if ( get_template() !== 'wprentals' ) {
             print '<div class="notice notice-warning"><p>'
-                . esc_html__('StaySuite Companion for WP Rentals is built for the WP Rentals theme. Some features may not work with the active theme.', 'staysuite-companion')
+                . esc_html__( 'StaySuite Companion for WP Rentals is built for the WP Rentals theme. Some features may not work with the active theme.', 'staysuite-companion' )
                 . '</p></div>';
         }
     }
@@ -254,11 +241,13 @@ final class Plugin {
  *
  * @return Plugin Single instance of this class.
  */
+// phpcs:disable Universal.Files.SeparateFunctionsFromOO.Mixed -- Bootstrap file: the singleton accessor belongs beside the class it returns.
 function plugin() {
     return Plugin::init();
 }
+// phpcs:enable Universal.Files.SeparateFunctionsFromOO.Mixed
 
-add_action('plugins_loaded', __NAMESPACE__ . '\plugin', 5);
+add_action( 'plugins_loaded', __NAMESPACE__ . '\plugin', 5 );
 
-register_activation_hook(__FILE__, array(__NAMESPACE__ . '\Installer', 'activate'));
-register_deactivation_hook(__FILE__, array(__NAMESPACE__ . '\Installer', 'deactivate'));
+register_activation_hook( __FILE__, array( __NAMESPACE__ . '\Installer', 'activate' ) );
+register_deactivation_hook( __FILE__, array( __NAMESPACE__ . '\Installer', 'deactivate' ) );
