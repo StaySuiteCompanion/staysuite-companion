@@ -106,7 +106,9 @@ class PreviewEndpoint {
             default:
                 return new WP_Error('ssc_unknown_block', esc_html__('Unknown block.', 'staysuite-companion'), array('status' => 400));
         }
-        return new WP_REST_Response(array('html' => $html), 200);
+        // Marker class lets preview-only CSS (e.g. hiding the JS-driven
+        // guest dropdown) apply without touching the frontend.
+        return new WP_REST_Response(array('html' => '<div class="ssc-preview">' . $html . '</div>'), 200);
     }
 
     /**

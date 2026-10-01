@@ -194,6 +194,7 @@ final class Plugin {
         if (is_admin()) {
             $this->container['assign_page'] = new AssignPage();
             $this->container['term_repair'] = new Admin\TermRepair();
+            $this->container['term_image'] = new Admin\TermImage();
         }
     }
 

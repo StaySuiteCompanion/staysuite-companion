@@ -60,11 +60,11 @@ class Renderer {
         if (is_wp_error($terms) || empty($terms)) {
             return '';
         }
-        $html = '<div class="ssc-tablets' . self::align_class($atts) . '">';
+        $html = '<div class="ssc-carousel-root ssc-tablets-root" data-ssc-carousel><div class="ssc-tablets ssc-carousel-track' . self::align_class($atts) . '">';
         foreach ($terms as $term) {
             $html .= self::render_tablet($term);
         }
-        $html .= '</div>';
+        $html .= '</div></div>';
         return $html;
     }
 

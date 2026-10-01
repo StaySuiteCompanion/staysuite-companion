@@ -99,13 +99,48 @@
     gap: 12px;
 }
 
+/* Tablets as a one-line snap carousel: six fit, the rest scroll with
+   gallery arrows (auto-hidden when everything fits). */
+.ssc-tablets.ssc-carousel-track {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 8px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.ssc-tablets.ssc-carousel-track::-webkit-scrollbar {
+    display: none;
+}
+
+.ssc-tablets.ssc-carousel-track > * {
+    flex: 0 0 calc((100% - 64px) / 6);
+    max-width: none;
+    min-width: 160px;
+    scroll-snap-align: start;
+}
+
+.ssc-tablets-root .ssc-carousel-nav {
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.ssc-tablets-root .ssc-carousel-prev,
+.ssc-tablets-root .ssc-carousel-next {
+    color: #3a4248;
+    text-shadow: 0 1px 8px rgba(255, 255, 255, 0.9);
+}
+
 .ssc-tablet {
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    min-width: 150px;
-    min-height: 110px;
-    padding: 12px 14px;
+    min-width: 200px;
+    min-height: 160px;
+    padding: 16px 18px;
     border-radius: 10px;
     background-color: #f0f0f0;
     background-size: cover;
@@ -138,6 +173,36 @@
 .ssc-tablet-noimg:hover {
     transform: translateY(-3px);
     box-shadow: 0 10px 24px rgba(19, 118, 153, 0.28);
+}
+
+/* Photo tablets: taller cards, legibility gradient, bottom-left text. */
+.ssc-tablet:not(.ssc-tablet-noimg) {
+    min-height: 230px;
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 8px 22px rgba(10, 40, 55, 0.22);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ssc-tablet:not(.ssc-tablet-noimg):hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(10, 40, 55, 0.3);
+}
+
+.ssc-tablet:not(.ssc-tablet-noimg)::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(5, 25, 35, 0.62), transparent 62%);
+    border-radius: inherit;
+    pointer-events: none;
+}
+
+.ssc-tablet:not(.ssc-tablet-noimg) .ssc-tablet-name,
+.ssc-tablet:not(.ssc-tablet-noimg) .ssc-tablet-count {
+    position: relative;
+    z-index: 1;
 }
 
 /* Theme link hover recolors text to the accent — on a teal card that
@@ -808,11 +873,12 @@ body.ssc-homepage .ssc-hero-inner {
     background: #fff;
     border: 0;
     border-radius: 58px;
-    box-shadow: 1px 2px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.14), 0 0 0 10px rgba(19, 118, 153, 0.16), 0 0 50px 14px rgba(19, 118, 153, 0.38);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.14), 0 0 0 10px color-mix(in srgb, var(--ssc-submit, #137699) 18%, transparent), 0 0 50px 14px color-mix(in srgb, var(--ssc-submit, #137699) 42%, transparent);
     padding: 8px;
 }
 
-.ssc-hero .search_wr_elementor .elementor-form-fields-wrapper {
+.ssc-hero .search_wr_elementor .wpestate-adv-holder {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -842,7 +908,7 @@ body.ssc-homepage .ssc-hero-inner {
     display: none !important;
 }
 
-.ssc-hero .search_wr_elementor .elementor-form-fields-wrapper {
+.ssc-hero .search_wr_elementor .wpestate-adv-holder {
     flex-wrap: nowrap;
 }
 
@@ -871,9 +937,24 @@ body.ssc-homepage .ssc-hero-inner {
     border: 0 !important;
 }
 
-/* Demo SVGs inherit the theme's purple fill — recolor to search accent. */
+/* Field icons need explicit sizes: neither Elementor nor theme CSS
+   loads for programmatic instances (editor iframe especially), so
+   unsized SVGs would blow up to container width. */
+.ssc-hero .search_wr_elementor .elementor_search_builder_field_wrapper svg,
+.ssc-hero .search_wr_elementor .elementor_search_builder_field_wrapper img,
+.ssc-hotel-search .search_wr_elementor .elementor_search_builder_field_wrapper svg,
+.ssc-hotel-search .search_wr_elementor .elementor_search_builder_field_wrapper img {
+    width: 20px !important;
+    height: 20px !important;
+    flex-shrink: 0;
+}
+
+.ssc-hero .search_wr_elementor .elementor_search_builder_field_wrapper i,
+.ssc-hotel-search .search_wr_elementor .elementor_search_builder_field_wrapper i {
+    font-size: 20px;
+}
 .ssc-hero .search_wr_elementor svg {
-    fill: var(--ssc-search-icon, #ef8557) !important;
+    fill: var(--ssc-search-icon, #137699) !important;
 }
 
 .ssc-hero .search_wr_elementor i {
@@ -895,7 +976,7 @@ body.ssc-homepage .ssc-hero-inner {
     background: transparent !important;
     box-shadow: none !important;
     color: #635e5e;
-    font-size: 14px;
+    font-size: 16px;
     height: 44px;
     padding: 0;
     width: 100%;
@@ -969,7 +1050,7 @@ body.ssc-homepage .ssc-hero-inner {
         overflow: visible;
     }
 
-    .ssc-hero .search_wr_elementor .elementor-form-fields-wrapper {
+    .ssc-hero .search_wr_elementor .wpestate-adv-holder {
         flex-direction: column;
         align-items: stretch;
         gap: 15px;
@@ -1463,7 +1544,7 @@ body.ssc-homepage .ssc-payments {
     margin-bottom: 22px;
 }
 
-.ssc-hotel-search .elementor-form-fields-wrapper {
+.ssc-hotel-search .search_wr_elementor .wpestate-adv-holder {
     display: flex;
     flex-wrap: nowrap;
     align-items: stretch;
@@ -1518,7 +1599,7 @@ body.ssc-homepage .ssc-payments {
 }
 
 @media (max-width: 640px) {
-    .ssc-hotel-search .elementor-form-fields-wrapper {
+    .ssc-hotel-search .search_wr_elementor .wpestate-adv-holder {
         flex-direction: column;
         align-items: stretch;
     }
@@ -1529,6 +1610,14 @@ body.ssc-homepage .ssc-payments {
         flex: 0 0 auto;
         max-width: 100%;
     }
+}
+
+/* Editor previews render the same markup without theme JS, so the
+   guest dropdown would sit open and wreck the row. Previews carry a
+   marker class (added by the preview endpoint) — keep it shut there;
+   the frontend toggle uses inline styles and is unaffected. */
+.ssc-preview .wpestate_guest_no_buttons {
+    display: none !important;
 }
 
 /* Opt-outs from Settings: dividers and animations. */

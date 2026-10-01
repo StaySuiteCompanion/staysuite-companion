@@ -14,7 +14,7 @@ Attributes: `title`, `subtitle`, `image_id`, `search_mode` (`theme`|`simple`|`no
 
 ## `ssc/term-tablets` / `[ssc_term_tablets]`
 
-Glass gradient pills linking term archives, with stay counts.
+Glass gradient pills linking term archives, with stay counts. Terms with a **Featured photo** (City/Category/Type/Area edit screens, added by this plugin) render as photo cards with a legibility gradient; the rest fall back to sea-glass gradients.
 
 Attributes: `taxonomy` (`property_city`|`property_category`|`property_action_category`|`property_area`), `number` (default 6), `hide_empty` (`1`|`0`).
 
