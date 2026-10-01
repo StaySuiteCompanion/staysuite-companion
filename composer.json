@@ -2,7 +2,7 @@
   "name": "staysuite/companion",
   "description": "Hotel grouping, homepage blocks and group booking for WP Rentals.",
   "type": "wordpress-plugin",
-  "license": "GPL-2.0-or-later",
+  "license": "GPL-3.0-or-later",
   "authors": [
     {
       "name": "Tanmay Kirtania",

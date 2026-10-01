@@ -4,7 +4,7 @@
   "private": true,
   "description": "React frontend for the StaySuite Companion for WP Rentals plugin.",
   "author": "Tanmay Kirtania <jktanmay@gmail.com> (https://jktanmay.com)",
-  "license": "GPL-2.0-or-later",
+  "license": "GPL-3.0-or-later",
   "scripts": {
     "build": "wp-scripts build",
     "start": "wp-scripts start"
