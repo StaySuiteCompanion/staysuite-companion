@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<ruleset name="StaySuite Companion">
+	<description>Strict WordPress coding standards for the free plugin.</description>
+	<rule ref="WordPress"/>
+	<arg name="extensions" value="php"/>
+	<file>staysuite-companion.php</file>
+	<file>includes</file>
+	<file>templates</file>
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+	<exclude-pattern>*/node_modules/*</exclude-pattern>
+	<exclude-pattern>*/assets/build/*</exclude-pattern>
+</ruleset>
