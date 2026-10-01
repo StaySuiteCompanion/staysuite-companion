@@ -1,7 +1,7 @@
 /**
  * Companion frontend entry.
  *
- * Mounts a HotelBadge React root inside every WP Rentals listing card.
+ * Mounts a HotelBadge React root inside every WpRentals listing card.
  * Cards expose their room ID via .listing_wrapper[data-listid].
  */
 import { createRoot } from 'react-dom/client';

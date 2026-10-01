@@ -1,6 +1,6 @@
 {
   "name": "staysuite/companion",
-  "description": "Hotel grouping, homepage blocks and group booking for WP Rentals.",
+  "description": "Hotel grouping, homepage blocks and group booking for WpRentals.",
   "type": "wordpress-plugin",
   "license": "GPL-3.0-or-later",
   "authors": [

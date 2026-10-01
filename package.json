@@ -2,7 +2,7 @@
   "name": "staysuite-companion",
   "version": "0.2.1",
   "private": true,
-  "description": "React frontend for the StaySuite Companion for WP Rentals plugin.",
+  "description": "React frontend for the StaySuite Companion for WpRentals plugin.",
   "author": "Tanmay Kirtania <jktanmay@gmail.com> (https://jktanmay.com)",
   "license": "GPL-3.0-or-later",
   "scripts": {

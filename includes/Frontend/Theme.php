@@ -1,6 +1,6 @@
 <?php
 /**
- * Theme bridge: exposes WP Rentals design tokens as CSS variables.
+ * Theme bridge: exposes WpRentals design tokens as CSS variables.
  *
  * The accent colors live in theme options (Redux), so they are read at
  * runtime instead of hardcoded. The plugin stylesheet consumes

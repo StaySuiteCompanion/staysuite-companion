@@ -1,7 +1,7 @@
 <?php
 /**
- * Plugin Name: StaySuite Companion for WP Rentals
- * Description: Hotel grouping, homepage blocks and group booking for WP Rentals. Works alongside the theme — no theme files are modified.
+ * Plugin Name: StaySuite Companion for WpRentals
+ * Description: Hotel grouping, homepage blocks and group booking for WpRentals. Works alongside the theme — no theme files are modified.
  * Plugin URI: https://jktanmay.com
  * Author: Tanmay Kirtania
  * Author URI: https://jktanmay.com
@@ -147,7 +147,7 @@ final class Plugin {
             esc_html(
                 sprintf(
                     /* translators: %s: minimum PHP version */
-                    __( 'StaySuite Companion for WP Rentals requires PHP %s or newer.', 'staysuite-companion' ),
+                    __( 'StaySuite Companion for WpRentals requires PHP %s or newer.', 'staysuite-companion' ),
                     $this->min_php
                 )
             )
@@ -223,14 +223,14 @@ final class Plugin {
     }
 
     /**
-     * Warn when the active theme is not WP Rentals.
+     * Warn when the active theme is not WpRentals.
      *
      * @return void
      */
     public function theme_check_notice() {
         if ( get_template() !== 'wprentals' ) {
             print '<div class="notice notice-warning"><p>'
-                . esc_html__( 'StaySuite Companion for WP Rentals is built for the WP Rentals theme. Some features may not work with the active theme.', 'staysuite-companion' )
+                . esc_html__( 'StaySuite Companion for WpRentals is built for the WpRentals theme. Some features may not work with the active theme.', 'staysuite-companion' )
                 . '</p></div>';
         }
     }

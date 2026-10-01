@@ -1,10 +1,10 @@
-# AGENTS.md — StaySuite Companion for WP Rentals
+# AGENTS.md — StaySuite Companion for WpRentals
 
 Instructions for AI coding agents (and humans) working in this repository.
 
 ## What this plugin is
 
-A companion plugin for the [WP Rentals](https://themeforest.net/item/wprentals-booking-accommodation-wordpress-theme/12332978) theme. It adds a **hotel layer** on top of the theme's existing listings (rooms): a `ssc_hotel` post type, five homepage blocks, and a group quote flow.
+A companion plugin for the [WpRentals](https://themeforest.net/item/wprentals-booking-accommodation-wordpress-theme/12332978) theme. It adds a **hotel layer** on top of the theme's existing listings (rooms): a `ssc_hotel` post type, five homepage blocks, and a group quote flow.
 
 **The one rule that shapes everything: never modify a theme file.** Every override ships inside this plugin — templates via `PageTemplate`, styles built from `src/scss` into `assets/build/css`, scripts in `assets/build`. If something seems to need a theme edit, it needs a `theme_page_templates` filter, a `template_include` filter, or a `wp_add_inline_style` call instead.
 

@@ -51,7 +51,7 @@ class Installer {
     /**
      * Run on plugin activation.
      *
-     * Refuses to activate unless WP Rentals is the active theme, then
+     * Refuses to activate unless WpRentals is the active theme, then
      * registers post types, migrates legacy brand data, creates the
      * homepage page and flushes rules.
      *
@@ -61,7 +61,7 @@ class Installer {
         if ( ! self::is_required_theme_active() ) {
             deactivate_plugins( plugin_basename( SSC_FILE ) );
             wp_die(
-                esc_html__( 'StaySuite Companion for WP Rentals requires the WP Rentals theme to be installed and activated.', 'staysuite-companion' ),
+                esc_html__( 'StaySuite Companion for WpRentals requires the WpRentals theme to be installed and activated.', 'staysuite-companion' ),
                 esc_html__( 'Plugin Activation Error', 'staysuite-companion' ),
                 array(
 					'response' => 200,
@@ -250,10 +250,10 @@ class Installer {
     }
 
     /**
-     * Check whether WP Rentals is installed and active.
+     * Check whether WpRentals is installed and active.
      *
      * The get_template() function returns the parent theme slug, so a child
-     * theme built on WP Rentals also passes this check.
+     * theme built on WpRentals also passes this check.
      *
      * @return bool True when the required theme is active.
      */

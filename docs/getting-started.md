@@ -3,7 +3,7 @@
 ## Requirements
 
 * WordPress 6.0+, PHP 7.4+
-* **WP Rentals theme active** — the plugin refuses to activate without it, since it reuses the theme's search, booking, map and slider components.
+* **WpRentals theme active** — the plugin refuses to activate without it, since it reuses the theme's search, booking, map and slider components.
 
 ## Install
 
