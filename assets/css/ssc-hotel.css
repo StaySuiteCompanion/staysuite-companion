@@ -175,9 +175,9 @@
     box-shadow: 0 10px 24px rgba(19, 118, 153, 0.28);
 }
 
-/* Photo tablets: taller cards, legibility gradient, bottom-left text. */
+/* Photo tablets: same landscape footprint as gradient ones, plus a
+   legibility gradient and bottom-left text. */
 .ssc-tablet:not(.ssc-tablet-noimg) {
-    min-height: 230px;
     border-radius: 14px;
     overflow: hidden;
     position: relative;
