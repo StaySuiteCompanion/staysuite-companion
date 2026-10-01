@@ -1,0 +1,25 @@
+# Getting started
+
+## Requirements
+
+* WordPress 6.0+, PHP 7.4+
+* **WP Rentals theme active** — the plugin refuses to activate without it, since it reuses the theme's search, booking, map and slider components.
+
+## Install
+
+1. Upload the plugin zip (Plugins → Add New → Upload) or ship the folder as `staysuite-companion` into `/wp-content/plugins/`.
+2. Activate. On activation the plugin registers its post types, runs any pending data upgrade, and flushes rewrite rules.
+
+## Set up the homepage
+
+1. Create/edit a page and pick the **StaySuite Homepage** template (Page Attributes → Template).
+2. Add StaySuite blocks: `ssc/hero-search` (full-width cover + theme search bar), `ssc/term-tablets`, `ssc/listing-carousel`, `ssc/payment-strip`. See [Homepage blocks](homepage-blocks.md).
+3. The transparent theme header is forced on automatically for this template.
+
+## Set up hotels
+
+1. Hotels → Add New: title, featured image, city/address/phone, content.
+2. Assign rooms three ways: room edit screen → **Hotel (StaySuite)** box (right after Publish), rooms list → Quick Edit → Hotel, or Hotels → Assign Rooms for bulk.
+3. Open the hotel page: gallery cover, facilities, date strip, room cards and map render from the rooms' own data.
+
+No theme file is ever modified — everything ships as plugin templates, styles and scripts.

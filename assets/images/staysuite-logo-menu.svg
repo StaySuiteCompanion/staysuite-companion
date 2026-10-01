@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="StaySuite">
+  <path d="M44 22 C41 16 33 13 27 16 C19 20 19 28 27 31 L37 35 C45 38 45 46 37 50 C31 53 24 51 20 45"
+        fill="none" stroke="#e3e3e3" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="46" cy="18" r="4" fill="#e3e3e3"/>
+</svg>

@@ -1,0 +1,24 @@
+{
+  "name": "staysuite/companion",
+  "description": "Hotel grouping, homepage blocks and group booking for WP Rentals.",
+  "type": "wordpress-plugin",
+  "license": "GPL-2.0-or-later",
+  "authors": [
+    {
+      "name": "Tanmay Kirtania",
+      "email": "jktanmay@gmail.com",
+      "homepage": "https://jktanmay.com"
+    }
+  ],
+  "require": {
+    "php": ">=7.4"
+  },
+  "autoload": {
+    "psr-4": {
+      "StaySuite\\Companion\\": "includes/"
+    }
+  },
+  "config": {
+    "optimize-autoloader": true
+  }
+}

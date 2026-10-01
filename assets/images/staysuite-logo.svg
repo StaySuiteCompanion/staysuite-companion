@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="StaySuite">
+  <defs>
+    <linearGradient id="ssc-g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b9aaa"/>
+      <stop offset="1" stop-color="#0a4e63"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="url(#ssc-g)"/>
+  <path d="M44 22 C41 16 33 13 27 16 C19 20 19 28 27 31 L37 35 C45 38 45 46 37 50 C31 53 24 51 20 45"
+        fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="46" cy="18" r="4" fill="#7fd4c1"/>
+</svg>

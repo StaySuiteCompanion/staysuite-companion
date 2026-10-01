@@ -1,0 +1,14 @@
+# Settings (StaySuite → tabbed page)
+
+One admin page (top-level **StaySuite** menu, below **Hotels**) with tabs — General/Settings plus Go Pro in free; License and AI Settings tabs inject from Pro via the `ssc.admin.tabs` JS filter. REST-backed (`ssc/v1/settings`), no page reloads.
+
+| Setting | Effect |
+|---|---|
+| Individual / Group capsule (on) | Capsule above the homepage search; off = native search everywhere |
+| Default adults (2) | Preselected in every Guests panel via the theme steppers; 0 disables |
+| Section dividers (on) | Hairlines between homepage sections (`ssc-no-dividers` opt-out class) |
+| Animations (on) | Group form pop-out (`ssc-no-animations` opt-out class) |
+| Hero cover height (75 vh) | Emitted as `--ssc-hero-h`, clamped 30–100 |
+| Search colors (theme) | Follow customizer, or custom submit + hover hexes |
+
+Menu map: **Hotels** (generic building icon, right after Listings) holds All Hotels, Add New, Assign Rooms (paged, searchable, per-row + bulk assign). **StaySuite** (brand logo) holds the tab page (Settings + Go Pro, License + AI Settings tabs injected by Pro), Group Requests, and — only when Pro is absent — Go Pro.

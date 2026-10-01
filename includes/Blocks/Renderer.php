@@ -1,0 +1,801 @@
+<?php
+/**
+ * Shared server-side renderers for blocks and shortcodes.
+ *
+ * Every public render method accepts a normalized attribute array and
+ * returns HTML. Blocks (render_callback) and shortcodes call the same
+ * methods, so both editors stay in sync by construction.
+ *
+ * @package StaySuite\Companion\Blocks
+ * @author Tanmay Kirtania <jktanmay@gmail.com>
+ */
+
+namespace StaySuite\Companion\Blocks;
+
+use StaySuite\Companion\Hotel\HotelCPT;
+use StaySuite\Companion\Hotel\Repository;
+use WP_Post;
+use WP_Query;
+use WP_Term;
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+/**
+ * Renders tablets, carousels and hero sections.
+ */
+class Renderer {
+
+    /**
+     * Taxonomies allowed as tablet / carousel sources.
+     *
+     * @var string[]
+     */
+    const ALLOWED_TAXONOMIES = array(
+        'property_city',
+        'property_category',
+        'property_action_category',
+        'property_area',
+    );
+
+    /**
+     * Render category / city tablets.
+     *
+     * @param array<string,mixed> $atts Normalized attributes.
+     * @return string Tablets HTML.
+     */
+    public static function render_term_tablets($atts) {
+        $atts = self::normalize_tablets_atts($atts);
+        if (!taxonomy_exists($atts['taxonomy'])) {
+            return '';
+        }
+        $terms = get_terms(array(
+            'taxonomy'   => $atts['taxonomy'],
+            'number'     => $atts['number'],
+            'orderby'    => 'count',
+            'order'      => 'DESC',
+            'hide_empty' => $atts['hide_empty'],
+        ));
+        if (is_wp_error($terms) || empty($terms)) {
+            return '';
+        }
+        $html = '<div class="ssc-tablets' . self::align_class($atts) . '">';
+        foreach ($terms as $term) {
+            $html .= self::render_tablet($term);
+        }
+        $html .= '</div>';
+        return $html;
+    }
+
+    /**
+     * Gutenberg alignment class for a block ("", " alignfull", " alignwide").
+     *
+     * Dynamic blocks must output this themselves — the editor does not
+     * add it to server-rendered markup.
+     *
+     * @param array<string,mixed> $atts Block attributes.
+     * @return string Alignment class fragment.
+     */
+    private static function align_class($atts) {
+        if (isset($atts['align']) && in_array($atts['align'], array('full', 'wide'), true)) {
+            return ' align' . $atts['align'];
+        }
+        return '';
+    }
+
+    /**
+     * Normalize tablets attributes.
+     *
+     * @param array<string,mixed> $atts Raw attributes.
+     * @return array{taxonomy:string,number:int,hide_empty:bool} Normalized attributes.
+     */
+    private static function normalize_tablets_atts($atts) {
+        $taxonomy = isset($atts['taxonomy']) ? sanitize_key($atts['taxonomy']) : 'property_city';
+        if (!in_array($taxonomy, self::ALLOWED_TAXONOMIES, true)) {
+            $taxonomy = 'property_city';
+        }
+        return array(
+            'taxonomy'   => $taxonomy,
+            'number'     => isset($atts['number']) ? max(1, min(24, intval($atts['number']))) : 6,
+            'hide_empty' => !isset($atts['hide_empty']) || (bool) $atts['hide_empty'],
+        );
+    }
+
+    /**
+     * Render a single term tablet with image, name and count.
+     *
+     * @param WP_Term $term Term to render.
+     * @return string Tablet HTML.
+     */
+    private static function render_tablet($term) {
+        $link = get_term_link($term);
+        if (is_wp_error($link)) {
+            return '';
+        }
+        $image = self::get_term_image($term->term_id);
+        $style = $image !== '' ? ' style="background-image:url(' . esc_url($image) . ')"' : '';
+        $html = '<a class="ssc-tablet' . ($image !== '' ? '' : ' ssc-tablet-noimg') . '"' . $style . ' href="' . esc_url($link) . '">';
+        $html .= '<span class="ssc-tablet-name">' . esc_html($term->name) . '</span>';
+        $html .= '<span class="ssc-tablet-count">' . sprintf(
+            /* translators: %d: listing count */
+            esc_html(_n('%d stay', '%d stays', intval($term->count), 'staysuite-companion')),
+            intval($term->count)
+        ) . '</span>';
+        $html .= '</a>';
+        return $html;
+    }
+
+    /**
+     * Get a term's featured image URL (theme convention: taxonomy_$id option).
+     *
+     * @param int $term_id Term ID.
+     * @return string Image URL or empty string.
+     */
+    private static function get_term_image($term_id) {
+        $data = get_option('taxonomy_' . intval($term_id));
+        $attach_id = 0;
+        if (is_array($data) && isset($data['category_attach_id'])) {
+            $attach_id = intval($data['category_attach_id']);
+        }
+        if ($attach_id > 0) {
+            $src = wp_get_attachment_image_src($attach_id, 'medium');
+            if (is_array($src)) {
+                return $src[0];
+            }
+        }
+        if (is_array($data) && !empty($data['category_featured_image'])) {
+            return esc_url_raw($data['category_featured_image']);
+        }
+        return '';
+    }
+
+    /**
+     * Render a listing carousel row (rooms or hotels).
+     *
+     * @param array<string,mixed> $atts Normalized attributes.
+     * @return string Carousel HTML.
+     */
+    public static function render_listing_carousel($atts) {
+        $atts = self::normalize_carousel_atts($atts);
+        if ($atts['source'] === 'hotels') {
+            $items_html = self::render_hotel_items($atts);
+        } else {
+            $items_html = self::render_room_items($atts);
+        }
+        if ($items_html === '') {
+            return '';
+        }
+        $html = '<section class="ssc-row' . self::align_class($atts) . '">';
+        if ($atts['title'] !== '') {
+            $html .= '<h2 class="ssc-row-title">' . esc_html($atts['title']) . '</h2>';
+        }
+        $html .= '<div class="ssc-carousel-root" data-ssc-carousel><div class="ssc-carousel-track">' . $items_html . '</div></div>';
+        $html .= '</section>';
+        return $html;
+    }
+
+    /**
+     * Normalize carousel attributes.
+     *
+     * @param array<string,mixed> $atts Raw attributes.
+     * @return array{title:string,source:string,taxonomy:string,term:string,city:string,count:int,featured_only:bool,include_ids:int[],order:string} Normalized attributes.
+     */
+    private static function normalize_carousel_atts($atts) {
+        $source = isset($atts['source']) && $atts['source'] === 'hotels' ? 'hotels' : 'rooms';
+        $taxonomy = isset($atts['taxonomy']) ? sanitize_key($atts['taxonomy']) : '';
+        if ($taxonomy !== '' && !in_array($taxonomy, self::ALLOWED_TAXONOMIES, true)) {
+            $taxonomy = '';
+        }
+        $order = isset($atts['order']) ? sanitize_key($atts['order']) : 'featured';
+        if (!in_array($order, array('featured', 'price_asc', 'price_desc', 'newest', 'rand'), true)) {
+            $order = 'featured';
+        }
+        $include_ids = array();
+        if (!empty($atts['include_ids'])) {
+            $raw = is_array($atts['include_ids']) ? implode(',', $atts['include_ids']) : (string) $atts['include_ids'];
+            foreach (explode(',', $raw) as $id) {
+                $id = intval(trim($id));
+                if ($id > 0) {
+                    $include_ids[] = $id;
+                }
+            }
+        }
+        return array(
+            'title'         => isset($atts['title']) ? sanitize_text_field($atts['title']) : '',
+            'source'        => $source,
+            'taxonomy'      => $taxonomy,
+            'term'          => isset($atts['term']) ? sanitize_title($atts['term']) : '',
+            'city'          => isset($atts['city']) ? sanitize_title($atts['city']) : '',
+            'count'         => isset($atts['count']) ? max(1, min(24, intval($atts['count']))) : 8,
+            'featured_only' => !empty($atts['featured_only']),
+            'include_ids'   => $include_ids,
+            'order'         => $order,
+        );
+    }
+
+    /**
+     * Build the rooms query for a carousel.
+     *
+     * @param array<string,mixed> $atts Normalized carousel attributes.
+     * @return WP_Query Rooms query.
+     */
+    private static function query_rooms($atts) {
+        $args = array(
+            'post_type'      => 'estate_property',
+            'post_status'    => 'publish',
+            'posts_per_page' => $atts['count'],
+            'no_found_rows'  => true,
+        );
+        if (!empty($atts['include_ids'])) {
+            $args['post__in'] = $atts['include_ids'];
+            $args['orderby'] = 'post__in';
+        }
+        $tax_query = array();
+        if ($atts['taxonomy'] !== '' && $atts['term'] !== '' && taxonomy_exists($atts['taxonomy'])) {
+            $tax_query[] = array(
+                'taxonomy' => $atts['taxonomy'],
+                'field'    => 'slug',
+                'terms'    => array($atts['term']),
+            );
+        }
+        if ($atts['city'] !== '' && taxonomy_exists('property_city')) {
+            $tax_query[] = array(
+                'taxonomy' => 'property_city',
+                'field'    => 'slug',
+                'terms'    => array($atts['city']),
+            );
+        }
+        if (!empty($tax_query)) {
+            $args['tax_query'] = $tax_query;
+        }
+        $meta_query = array();
+        if ($atts['featured_only']) {
+            $meta_query[] = array('key' => 'prop_featured', 'value' => '1', 'compare' => '=');
+        }
+        if (!empty($meta_query)) {
+            $args['meta_query'] = $meta_query;
+        }
+        switch ($atts['order']) {
+            case 'price_asc':
+                $args['meta_key'] = 'property_price';
+                $args['orderby'] = 'meta_value_num';
+                $args['order'] = 'ASC';
+                break;
+            case 'price_desc':
+                $args['meta_key'] = 'property_price';
+                $args['orderby'] = 'meta_value_num';
+                $args['order'] = 'DESC';
+                break;
+            case 'newest':
+                $args['orderby'] = 'date';
+                $args['order'] = 'DESC';
+                break;
+            case 'rand':
+                $args['orderby'] = 'rand';
+                break;
+            case 'featured':
+            default:
+                $args['meta_key'] = 'prop_featured';
+                $args['orderby'] = 'meta_value_num date';
+                $args['order'] = 'DESC';
+                break;
+        }
+        return new WP_Query($args);
+    }
+
+    /**
+     * Render room cards for a carousel using the theme's card template.
+     *
+     * @param array<string,mixed> $atts Normalized carousel attributes.
+     * @return string Cards HTML.
+     */
+    private static function render_room_items($atts) {
+        $query = self::query_rooms($atts);
+        if (!$query->have_posts()) {
+            return '';
+        }
+        self::setup_card_context();
+        $html = '';
+        while ($query->have_posts()) {
+            $query->the_post();
+            $html .= self::render_room_card(get_the_ID());
+        }
+        wp_reset_postdata();
+        return $html;
+    }
+
+    /**
+     * Set the globals the theme card template expects.
+     *
+     * Mirrors property_list.php / normal_map_core.php.
+     *
+     * @return void
+     */
+    public static function setup_card_context() {
+        global $wpestate_curent_fav, $wpestate_currency, $wpestate_where_currency,
+               $wpestate_listing_type, $wpestate_property_unit_slider,
+               $wpestate_options, $show_compare, $schema_flag;
+
+        $current_user = wp_get_current_user();
+        $wpestate_currency = function_exists('wprentals_get_option') ? esc_html(wprentals_get_option('wp_estate_currency_label_main', '')) : '';
+        $wpestate_where_currency = function_exists('wprentals_get_option') ? esc_html(wprentals_get_option('wp_estate_where_currency_symbol', '')) : '';
+        $wpestate_curent_fav = get_option('favorites' . $current_user->ID);
+        $wpestate_listing_type = function_exists('wprentals_get_option') ? wprentals_get_option('wp_estate_listing_unit_type', '') : '';
+        $wpestate_property_unit_slider = function_exists('wprentals_get_option') ? esc_html(wprentals_get_option('wp_estate_prop_list_slider', '')) : '';
+        $wpestate_options = array();
+        $show_compare = 0;
+        $schema_flag = 0;
+    }
+
+    /**
+     * Render one room card through the theme template.
+     *
+     * @param int $room_id Room post ID.
+     * @return string Card HTML.
+     */
+    public static function render_room_card($room_id) {
+        global $post;
+        $room = get_post(intval($room_id));
+        if (!$room instanceof WP_Post || $room->post_type !== 'estate_property') {
+            return '';
+        }
+        $previous = $post;
+        $post = $room;
+        setup_postdata($post);
+        $html = '';
+        $card = locate_template('templates/property_unit.php');
+        if ($card !== '') {
+            ob_start();
+            include $card;
+            $html = (string) ob_get_clean();
+        }
+        $post = $previous;
+        wp_reset_postdata();
+        return $html;
+    }
+
+    /**
+     * Build the hotels query for a carousel.
+     *
+     * @param array<string,mixed> $atts Normalized carousel attributes.
+     * @return WP_Query Hotels query.
+     */
+    private static function query_hotels($atts) {
+        $args = array(
+            'post_type'      => HotelCPT::POST_TYPE,
+            'post_status'    => 'publish',
+            'posts_per_page' => $atts['count'],
+            'no_found_rows'  => true,
+        );
+        if (!empty($atts['include_ids'])) {
+            $args['post__in'] = $atts['include_ids'];
+            $args['orderby'] = 'post__in';
+        } elseif ($atts['order'] === 'rand') {
+            $args['orderby'] = 'rand';
+        } else {
+            $args['orderby'] = 'date';
+            $args['order'] = 'DESC';
+        }
+        $meta_query = array();
+        if ($atts['featured_only']) {
+            $meta_query[] = array('key' => '_ssc_featured', 'value' => '1', 'compare' => '=');
+        }
+        if ($atts['city'] !== '') {
+            $meta_query[] = array('key' => '_ssc_city', 'value' => $atts['city'], 'compare' => '=');
+        }
+        if (!empty($meta_query)) {
+            $args['meta_query'] = $meta_query;
+        }
+        return new WP_Query($args);
+    }
+
+    /**
+     * Render hotel cards for a carousel.
+     *
+     * @param array<string,mixed> $atts Normalized carousel attributes.
+     * @return string Cards HTML.
+     */
+    private static function render_hotel_items($atts) {
+        $query = self::query_hotels($atts);
+        if (!$query->have_posts()) {
+            return '';
+        }
+        $html = '';
+        while ($query->have_posts()) {
+            $query->the_post();
+            $html .= self::render_hotel_card(get_the_ID());
+        }
+        wp_reset_postdata();
+        return $html;
+    }
+
+    /**
+     * Render one hotel card (plugin-owned markup).
+     *
+     * @param int $hotel_id Hotel post ID.
+     * @return string Card HTML.
+     */
+    public static function render_hotel_card($hotel_id) {
+        $hotel_id = intval($hotel_id);
+        if (get_post_type($hotel_id) !== HotelCPT::POST_TYPE) {
+            return '';
+        }
+        $url = get_permalink($hotel_id);
+        $city_term = Repository::get_city_term($hotel_id);
+        $room_count = Repository::get_room_count($hotel_id);
+        $min_price = Repository::get_min_price($hotel_id);
+        $thumb = get_the_post_thumbnail($hotel_id, 'medium');
+
+        $html = '<article class="ssc-hotel-card">';
+        $html .= '<a class="ssc-hotel-card-media" href="' . esc_url($url) . '">';
+        $html .= $thumb !== '' ? $thumb : '<span class="ssc-hotel-card-placeholder" aria-hidden="true"></span>';
+        $html .= '</a>';
+        $html .= '<div class="ssc-hotel-card-body">';
+        $html .= '<h3 class="ssc-hotel-card-title"><a href="' . esc_url($url) . '">' . esc_html(get_the_title($hotel_id)) . '</a></h3>';
+        $sub = array();
+        if ($city_term) {
+            $sub[] = $city_term->name;
+        }
+        if ($room_count > 0) {
+            $sub[] = sprintf(
+                /* translators: %d: number of rooms */
+                esc_html(_n('%d room', '%d rooms', $room_count, 'staysuite-companion')),
+                intval($room_count)
+            );
+        }
+        if (!empty($sub)) {
+            $html .= '<div class="ssc-hotel-card-sub">' . esc_html(implode(' · ', $sub)) . '</div>';
+        }
+        if ($min_price > 0) {
+            $html .= '<div class="ssc-hotel-card-price">' . sprintf(
+                /* translators: %s: starting price */
+                esc_html__('from %s / night', 'staysuite-companion'),
+                Repository::format_price($min_price)
+            ) . '</div>';
+        }
+        $html .= '</div></article>';
+        return $html;
+    }
+
+    /**
+     * Render the hero with cover image and search.
+     *
+     * Search modes: theme (the theme's own search form, so the
+     * Individual/Group pill and all theme behavior apply), simple (the
+     * plugin's plain GET form), or none.
+     *
+     * @param array<string,mixed> $atts Normalized attributes.
+     * @return string Hero HTML.
+     */
+    public static function render_hero($atts) {
+        $title = isset($atts['title']) ? sanitize_text_field($atts['title']) : '';
+        $subtitle = isset($atts['subtitle']) ? sanitize_text_field($atts['subtitle']) : '';
+        $image_id = isset($atts['image_id']) ? intval($atts['image_id']) : 0;
+        $mode = isset($atts['search_mode']) ? sanitize_key($atts['search_mode']) : 'theme';
+        if (!in_array($mode, array('theme', 'simple', 'none'), true)) {
+            $mode = 'theme';
+        }
+        if (isset($atts['show_search']) && !(bool) $atts['show_search']) {
+            $mode = 'none';
+        }
+        $align = self::align_class($atts);
+
+        $style = '';
+        if ($image_id > 0) {
+            $src = wp_get_attachment_image_src($image_id, 'full');
+            if (is_array($src)) {
+                $style = ' style="background-image:url(' . esc_url($src[0]) . ')"';
+            }
+        }
+        $html = '<section class="ssc-hero' . $align . '"' . $style . '><div class="ssc-hero-inner">';
+        if ($title !== '') {
+            $html .= '<h1 class="ssc-hero-title">' . esc_html($title) . '</h1>';
+        }
+        if ($subtitle !== '') {
+            $html .= '<p class="ssc-hero-subtitle">' . esc_html($subtitle) . '</p>';
+        }
+        if ($mode === 'theme') {
+            $html .= self::render_theme_search();
+        } elseif ($mode === 'simple') {
+            $html .= self::render_search_form();
+        }
+        $html .= '</div></section>';
+        return $html;
+    }
+
+    /**
+     * Render the theme's own search form inside the hero.
+     *
+     * Prefers the Elementor Search Form Builder widget output — pixel for
+     * pixel the default search bar, responsive included. Falls back to the
+     * classic shortcode form, then the simple form.
+     *
+     * @return string Search form HTML.
+     */
+    private static function render_theme_search() {
+        try {
+            $elementor = self::render_elementor_search();
+        } catch (\Throwable $e) {
+            $elementor = '';
+        }
+        if ($elementor !== '') {
+            return $elementor;
+        }
+        global $search_object;
+        if ((!isset($search_object) || !is_object($search_object)) && class_exists('WpRentalsSearch')) {
+            $search_object = new \WpRentalsSearch();
+        }
+        if (isset($search_object) && is_object($search_object) && method_exists($search_object, 'wpstate_display_search_form')) {
+            return (string) $search_object->wpstate_display_search_form('shortcode');
+        }
+        return self::render_search_form();
+    }
+
+    /**
+     * Render the Elementor Search Form Builder widget with preset fields.
+     *
+     * Instantiates the theme's widget outside the editor with Where /
+     * Check In / Check Out / Guests settings, so the hero shows the exact
+     * default search bar.
+     *
+     * @return string Widget HTML or empty string when unavailable.
+     */
+    private static function render_elementor_search() {
+        $html = self::render_search_widget(self::elementor_search_settings());
+        if (strpos($html, '<form') === false) {
+            return '';
+        }
+        return '<div class="ssc-elementor-search" data-ssc-search>' . $html . '</div>';
+    }
+
+    /**
+     * Render the hotel search bar: theme widget, no location field.
+     *
+     * Check In / Check Out / Guests plus the theme's own submit button,
+     * posting back to the hotel page so dates filter the room list.
+     *
+     * @param string $hotel_url Hotel permalink (form action override).
+     * @return string Widget HTML or empty string when unavailable.
+     */
+    public static function render_hotel_search($hotel_url) {
+        $html = self::render_search_widget(self::hotel_search_settings());
+        if (strpos($html, '<form') === false) {
+            return '';
+        }
+        $html = preg_replace('/action="[^"]*"/', 'action="' . esc_url($hotel_url) . '"', $html, 1);
+        return '<div class="ssc-hotel-search" data-ssc-search>' . $html . '</div>';
+    }
+
+    /**
+     * Instantiate the Search Form Builder widget with given settings.
+     *
+     * @param array<string,mixed> $settings Widget settings.
+     * @return string Widget HTML or empty string when unavailable.
+     */
+    private static function render_search_widget($settings) {
+        $widget_class = 'ElementorWpRentals\Widgets\Wprentals_Search_Form_Builder';
+        if (!class_exists($widget_class)) {
+            $widget_file = trailingslashit(defined('WP_PLUGIN_DIR') ? WP_PLUGIN_DIR : WP_CONTENT_DIR . '/plugins')
+                . 'wprentals-elementor/widgets/search_form_builder.php';
+            if (is_readable($widget_file)) {
+                require_once $widget_file;
+            }
+        }
+        if (!class_exists($widget_class) || !class_exists('Elementor\Plugin') || !method_exists($widget_class, 'print_element')) {
+            return '';
+        }
+        $data = array(
+            'id'         => 'ssc-search-' . substr(md5(wp_json_encode($settings)), 0, 8),
+            'elType'     => 'widget',
+            'widgetType' => 'Wprentals_Search_Form_Builder',
+            'settings'   => $settings,
+        );
+        global $post;
+        $post_backup = $post;
+        if (!$post instanceof \WP_Post) {
+            $fallback_id = intval(get_option('page_on_front'));
+            $post = ($fallback_id > 0 && get_post_status($fallback_id)) ? get_post($fallback_id) : null;
+            if (!$post instanceof \WP_Post) {
+                return '';
+            }
+        }
+        try {
+            $element = null;
+            if (did_action('elementor/widgets/register')) {
+                $manager = \Elementor\Plugin::instance()->elements_manager;
+                if ($manager && method_exists($manager, 'create_element_instance')) {
+                    $element = $manager->create_element_instance($data);
+                }
+            }
+            if (!$element) {
+                $element = new $widget_class($data, array());
+            }
+            ob_start();
+            $element->print_element();
+            $html = (string) ob_get_clean();
+        } finally {
+            $post = $post_backup;
+        }
+        if (strpos($html, '<form') === false) {
+            return '';
+        }
+        return '<div class="ssc-elementor-search" data-ssc-search>' . $html . '</div>';
+    }
+
+    /**
+     * Preset widget settings for the hero search bar.
+     *
+     * Mirrors the reference Search Form Builder instance (pill radius 58,
+     * coral submit, hairline dividers, SVG icons), since Elementor only
+     * compiles style-tab CSS for editor-placed widgets.
+     *
+     * @return array<string,mixed> Widget settings.
+     */
+    private static function elementor_search_settings() {
+        $location = array('value' => array('url' => 'https://paphos.wprentals.org/wp-content/uploads/2023/05/location-1.svg', 'id' => 39649), 'library' => 'svg');
+        $calendar = array('value' => array('url' => 'https://paphos.wprentals.org/wp-content/uploads/2023/05/calendar.svg', 'id' => 39709), 'library' => 'svg');
+        $user = array('value' => array('url' => 'https://paphos.wprentals.org/wp-content/uploads/2023/05/user.svg', 'id' => 39712), 'library' => 'svg');
+        $settings = array(
+            'form_fields' => array(
+                array(
+                    '_id'         => 'ssc_where',
+                    'field_type'  => 'Location',
+                    'field_how'   => 'like',
+                    'field_label' => esc_html__('Location', 'staysuite-companion'),
+                    'placeholder' => esc_html__('Where are you going', 'staysuite-companion'),
+                    'width'       => '30',
+                    'icon'        => $location,
+                ),
+                array(
+                    '_id'         => 'ssc_in',
+                    'field_type'  => 'check_in',
+                    'field_how'   => 'date bigger',
+                    'field_label' => esc_html__('Check In', 'staysuite-companion'),
+                    'placeholder' => esc_html__('Check In', 'staysuite-companion'),
+                    'width'       => '20',
+                    'icon'        => $calendar,
+                ),
+                array(
+                    '_id'         => 'ssc_out',
+                    'field_type'  => 'check_out',
+                    'field_how'   => 'date smaller',
+                    'field_label' => esc_html__('Check Out', 'staysuite-companion'),
+                    'placeholder' => esc_html__('Check Out', 'staysuite-companion'),
+                    'width'       => '20',
+                    'icon'        => $calendar,
+                ),
+                array(
+                    '_id'         => 'ssc_guests',
+                    'field_type'  => 'guest_no',
+                    'field_how'   => 'greater',
+                    'field_label' => esc_html__('Guests', 'staysuite-companion'),
+                    'placeholder' => esc_html__('Add Guests', 'staysuite-companion'),
+                    'width'       => '20',
+                    'icon'        => $user,
+                ),
+            ),
+            'form_field_show_labels'        => '',
+            'form_field_show_section_title' => '',
+            'form_field_section_title_text' => 'Advanced Search',
+            'form_field_show_exra_details'  => '',
+            'submit_button_text'            => '',
+            'submit_button_width'           => '10',
+            'search_icon_button'            => array('value' => array('url' => 'https://paphos.wprentals.org/wp-content/uploads/2022/11/search.svg', 'id' => 39328), 'library' => 'svg'),
+        );
+        /**
+         * Filter hero search widget settings.
+         *
+         * @param array<string,mixed> $settings Widget settings.
+         */
+        return apply_filters('ssc_hero_search_settings', $settings);
+    }
+
+    /**
+     * Preset widget settings for the hotel search bar.
+     *
+     * Theme-native Check In / Check Out / Guests fields with the theme's
+     * own submit button — no location field. Style-tab CSS is supplied by
+     * the plugin stylesheet (see .ssc-hotel-search).
+     *
+     * @return array<string,mixed> Widget settings.
+     */
+    private static function hotel_search_settings() {
+        $calendar = array('value' => array('url' => 'https://paphos.wprentals.org/wp-content/uploads/2023/05/calendar.svg', 'id' => 39709), 'library' => 'svg');
+        $user = array('value' => array('url' => 'https://paphos.wprentals.org/wp-content/uploads/2023/05/user.svg', 'id' => 39712), 'library' => 'svg');
+        $settings = array(
+            'form_fields' => array(
+                array(
+                    '_id'         => 'ssc_hotel_in',
+                    'field_type'  => 'check_in',
+                    'field_how'   => 'date bigger',
+                    'field_label' => esc_html__('Check In', 'staysuite-companion'),
+                    'placeholder' => esc_html__('Check In', 'staysuite-companion'),
+                    'width'       => '30',
+                    'icon'        => $calendar,
+                ),
+                array(
+                    '_id'         => 'ssc_hotel_out',
+                    'field_type'  => 'check_out',
+                    'field_how'   => 'date smaller',
+                    'field_label' => esc_html__('Check Out', 'staysuite-companion'),
+                    'placeholder' => esc_html__('Check Out', 'staysuite-companion'),
+                    'width'       => '30',
+                    'icon'        => $calendar,
+                ),
+                array(
+                    '_id'         => 'ssc_hotel_guests',
+                    'field_type'  => 'guest_no',
+                    'field_how'   => 'greater',
+                    'field_label' => esc_html__('Guests', 'staysuite-companion'),
+                    'placeholder' => esc_html__('Add Guests', 'staysuite-companion'),
+                    'width'       => '25',
+                    'icon'        => $user,
+                ),
+            ),
+            'form_field_show_labels'        => '',
+            'form_field_show_section_title' => '',
+            'form_field_section_title_text' => 'Advanced Search',
+            'form_field_show_exra_details'  => '',
+            'submit_button_text'            => esc_html__('Search', 'staysuite-companion'),
+            'submit_button_width'           => '15',
+        );
+        /**
+         * Filter hotel search widget settings (Pro: extra fields, widths).
+         *
+         * @param array<string,mixed> $settings Widget settings.
+         */
+        return apply_filters('ssc_hotel_search_settings', $settings);
+    }
+
+    /**
+     * Render the hero search form.
+     *
+     * @return string Form HTML, empty when no results page exists.
+     */
+    private static function render_search_form() {
+        $action = function_exists('wpestate_get_template_link')
+            ? wpestate_get_template_link('advanced_search_results.php')
+            : home_url('/');
+        if ($action === '') {
+            return '';
+        }
+        $html = '<form class="ssc-search" role="search" method="get" action="' . esc_url($action) . '">';
+        $html .= '<label class="ssc-search-field"><span>' . esc_html__('Where are you going?', 'staysuite-companion') . '</span>'
+            . '<input type="text" name="search_location" autocomplete="off" placeholder="' . esc_attr__('Search destination, hotel, area…', 'staysuite-companion') . '"></label>';
+        $html .= '<input type="hidden" name="stype" value="tax">';
+        $html .= '<label class="ssc-search-field"><span>' . esc_html__('Check in', 'staysuite-companion') . '</span>'
+            . '<input type="text" name="check_in" placeholder="YYYY-MM-DD"></label>';
+        $html .= '<label class="ssc-search-field"><span>' . esc_html__('Check out', 'staysuite-companion') . '</span>'
+            . '<input type="text" name="check_out" placeholder="YYYY-MM-DD"></label>';
+        $html .= '<label class="ssc-search-field"><span>' . esc_html__('Guests', 'staysuite-companion') . '</span>'
+            . '<input type="number" name="guest_no" min="1" value="2"></label>';
+        $html .= wp_nonce_field('wpestate_regular_search', 'wpestate_regular_search_nonce', true, false);
+        $html .= '<button type="submit" class="ssc-search-submit">' . esc_html__('Search', 'staysuite-companion') . '</button>';
+        $html .= '</form>';
+        return $html;
+    }
+
+    /**
+     * Render the payment strip (label + banner image).
+     *
+     * @param array<string,mixed> $atts Normalized attributes.
+     * @return string Strip HTML.
+     */
+    public static function render_payment_strip($atts) {
+        $title = isset($atts['title']) ? sanitize_text_field($atts['title']) : '';
+        $image_id = isset($atts['image_id']) ? intval($atts['image_id']) : 0;
+        $html = '<section class="ssc-payments">';
+        if ($title !== '') {
+            $html .= '<span class="ssc-pay-title">' . esc_html($title) . '</span>';
+        }
+        if ($image_id > 0) {
+            $img = wp_get_attachment_image($image_id, 'full');
+            if ($img !== '') {
+                $html .= '<div class="ssc-pay-banner">' . $img . '</div>';
+            }
+        }
+        $html .= '</section>';
+        return $html;
+    }
+}
