@@ -12,6 +12,16 @@ body.ssc-has-hero #search_wrapper {
     display: none !important;
 }
 
+/* No theme mobile search on hero pages either. header_media prints its own
+   mobile toggle bar (#adv-search-header-mobile) plus collapsible form, which
+   the #search_wrapper rule above does not cover. It duplicates the hero's
+   search and slides under the transparent overlay header, overlapping the
+   logo — so hide both wherever the hero block is present. */
+body.ssc-has-hero #adv-search-header-mobile,
+body.ssc-has-hero #adv-search-mobile {
+    display: none !important;
+}
+
 /* Full-width content, no sidebar on hero pages. */
 body.ssc-has-hero #post > div[class*="col-"] {
     width: 100% !important;
@@ -410,6 +420,34 @@ body.ssc-homepage .ssc-hero-inner {
     .ssc-hero .search_wr_elementor .elementor-field,
     .ssc-hero .search_wr_elementor input {
         max-width: 100%;
+    }
+}
+
+/* Mobile cover: stack from the top. A centred flex column whose content is
+   taller than its box pushes everything to the bottom (classic centring
+   overflow) — on phones the capsule plus the stacked search card exceed the
+   75vh box minus its 240px of fixed top/bottom padding, which is how the
+   search card ended up at the cover's foot. Top-align instead and shrink
+   the header-clearance paddings so the card sits just under the overlay
+   header. The cover keeps its min-height and grows with the content. */
+@media (max-width: bp.$bp-sm) {
+    .ssc-has-hero .ssc-hero.alignfull,
+    .ssc-preview .ssc-hero.alignfull {
+        justify-content: flex-start;
+    }
+
+    body.ssc-homepage .ssc-hero.alignfull {
+        padding-top: 84px;
+        padding-bottom: 40px;
+    }
+
+    body.ssc-homepage .ssc-hero-inner {
+        padding-top: 12px;
+    }
+
+    .ssc-hero-inner {
+        padding-left: 16px;
+        padding-right: 16px;
     }
 }
 
