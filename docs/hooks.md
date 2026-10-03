@@ -22,7 +22,7 @@ AJAX: `ssc_group_quote` (quote flow), `ssc_resolve_hotels` (card badges). JS glo
 
 * Post types: `ssc_hotel` (slug `/hotels/`), `ssc_group_request`.
 * Room link: `_ssc_hotel_id` on listings; display price `_ssc_original_price`; hotel `_ssc_city/_ssc_address/_ssc_phone/_ssc_featured`; coords reuse theme keys `property_latitude/longitude`.
-* Options: `ssc_data_migrated` (upgrade flag). No other options; no transients.
+* Options: `ssc_homepage_page_id` (homepage page created on activation), `ssc_settings`. No transients kept long-term.
 
 ## deliberate extension seams (Pro roadmap)
 

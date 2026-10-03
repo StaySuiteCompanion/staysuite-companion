@@ -192,7 +192,6 @@ final class Plugin {
      * @return void
      */
     private function init_actions() {
-        add_action( 'init', array( __NAMESPACE__ . '\Installer', 'maybe_migrate' ), 5 );
         add_filter( 'plugin_action_links_' . plugin_basename( SSC_FILE ), array( $this, 'plugin_action_links' ) );
         add_action( 'admin_notices', array( $this, 'theme_check_notice' ) );
     }

@@ -43,7 +43,7 @@ Note: `npm run build` needs `NODE_ENV=development`. A shell that exports `NODE_E
 | Booking | `includes/Booking/` | Group request CPT, quote form, AJAX submit |
 | Frontend | `includes/Frontend/` | Page template, template loader, scripts, theme integration |
 | Admin | `includes/Admin/` | Settings, room assignment, term image/repair tools |
-| Install | `includes/Installer.php` | Activation checks, DB flush, `vs_*` → `ssc_*` migration |
+| Install | `includes/Installer.php` | Activation checks, homepage setup, DB flush |
 | Styles | `src/scss/` | Sass source — one partial per feature, compiled to `assets/build/css` |
 | UI assets | `assets/` | Compiled JS (`build/`), Sass output (`build/css/`), vanilla `js/`, theme logos |
 
@@ -65,7 +65,7 @@ Classes are namespaced `StaySuite\Companion\…` and autoloaded by classmap (`co
 ## Data and compatibility
 
 - Post types: `ssc_hotel`, `ssc_group_request`. Listings (rooms) are the theme's own posts — never copy or duplicate theme data.
-- Meta: `_ssc_*`. Renaming a meta key needs a migration in `Installer::maybe_migrate()` (idempotent, guarded by an option flag) and a `--major` release.
+- Meta: `_ssc_*`. Renaming a meta key needs a data migration routine and a `--major` release.
 - Theme integration is defensive: guard every theme function call with `function_exists()` so a theme update cannot fatal the site.
 - Read availability from the theme (`wpestate_check_booking_valability`), never re-implement booking.
 

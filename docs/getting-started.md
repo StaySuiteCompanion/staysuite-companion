@@ -8,7 +8,7 @@
 ## Install
 
 1. Upload the plugin zip (Plugins → Add New → Upload) or ship the folder as `staysuite-companion` into `/wp-content/plugins/`.
-2. Activate. On activation the plugin registers its post types, runs any pending data upgrade, creates a **Homepage - StaySuite** page, and flushes rewrite rules.
+2. Activate. On activation the plugin registers its post types, creates a **Homepage - StaySuite** page, and flushes rewrite rules.
 
 ## Set up the homepage
 

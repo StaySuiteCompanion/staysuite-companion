@@ -9,7 +9,6 @@
 * [Settings](settings.md) — every toggle: capsule, adults, dividers, animations, hero height, colors
 * [Hooks & data](hooks.md) — actions, REST, AJAX, meta keys, options (extension points)
 * [Pro architecture](pro.md) — gates, licensing, updates, data rules for the premium addon
-* [Upgrade & migration](upgrade.md) — the `vs_*` → `ssc_*` rename and what it touched
 * [Release export](release.md) — building the minimal zip, release/tag commands, wp.org SVN
 * [Multi-room selection (Pro)](pro-multiroom.md) — Pro selection tray and combined quotes
 * [AI group concierge (Pro)](pro-concierge.md) — BYOK chat concierge on hotel pages

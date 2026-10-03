@@ -28,13 +28,6 @@ class Installer {
     const REQUIRED_THEME = 'wprentals';
 
     /**
-     * Option flag marking the vs_* -> ssc_* data migration as done.
-     *
-     * @var string
-     */
-    const MIGRATION_FLAG = 'ssc_data_migrated';
-
-    /**
      * Option holding the ID of the homepage page created on activation.
      *
      * @var string
@@ -52,8 +45,7 @@ class Installer {
      * Run on plugin activation.
      *
      * Refuses to activate unless WpRentals is the active theme, then
-     * registers post types, migrates legacy brand data, creates the
-     * homepage page and flushes rules.
+     * registers post types, creates the homepage page and flushes rules.
      *
      * @return void
      */
@@ -71,7 +63,6 @@ class Installer {
         }
         Hotel\HotelCPT::register();
         Booking\RequestCPT::register();
-        self::maybe_migrate();
         self::maybe_create_homepage_page();
         flush_rewrite_rules();
     }
@@ -196,57 +187,6 @@ class Installer {
             return;
         }
         update_post_meta( $page_id, '_wp_page_template', PageTemplate::HOMEPAGE_SLUG );
-    }
-
-    /**
-     * One-time migration from the Varsity Surfers brand keys.
-     *
-     * Renames post types (vs_hotel, vs_group_request), _vsc_* meta keys,
-     * the vs-homepage page template, and vs/* blocks plus vs_* shortcodes
-     * inside post content. Idempotent via option flag — safe to call on
-     * every load; only pre-rename sites are touched.
-     *
-     * @return void
-     */
-    public static function maybe_migrate() {
-        if ( get_option( self::MIGRATION_FLAG ) ) {
-            return;
-        }
-        global $wpdb;
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery -- one-time upgrade routine.
-        $wpdb->query( "UPDATE {$wpdb->posts} SET post_type = 'ssc_hotel' WHERE post_type = 'vs_hotel'" );
-        $wpdb->query( "UPDATE {$wpdb->posts} SET post_type = 'ssc_group_request' WHERE post_type = 'vs_group_request'" );
-        $meta_like = $wpdb->esc_like( '_vsc_' ) . '%';
-        $wpdb->query(
-            $wpdb->prepare(
-                "UPDATE {$wpdb->postmeta} SET meta_key = REPLACE(meta_key, '_vsc_', '_ssc_') WHERE meta_key LIKE %s",
-                $meta_like
-            )
-        );
-        $wpdb->query(
-            $wpdb->prepare(
-                "UPDATE {$wpdb->postmeta} SET meta_value = %s WHERE meta_key = '_wp_page_template' AND meta_value = %s",
-                'ssc-homepage',
-                'vs-homepage'
-            )
-        );
-        foreach ( array(
-			'<!-- wp:vs/' => '<!-- wp:ssc/',
-			'[vs_' => '[ssc_',
-		) as $from => $to ) {
-            $content_like = '%' . $wpdb->esc_like( $from ) . '%';
-            $wpdb->query(
-                $wpdb->prepare(
-                    "UPDATE {$wpdb->posts} SET post_content = REPLACE(post_content, %s, %s) WHERE post_content LIKE %s",
-                    $from,
-                    $to,
-                    $content_like
-                )
-            );
-        }
-        // phpcs:enable
-        update_option( self::MIGRATION_FLAG, 1 );
-        flush_rewrite_rules();
     }
 
     /**

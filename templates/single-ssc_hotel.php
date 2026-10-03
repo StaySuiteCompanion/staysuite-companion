@@ -149,9 +149,9 @@ while ( have_posts() ) :
             <div class="ssc-room-cards">
                 <?php
                 // Context for the theme's card slider (see property_unit.php).
-                $vsc_currency       = function_exists( 'wprentals_get_option' ) ? esc_html( wprentals_get_option( 'wp_estate_currency_label_main', '' ) ) : '';
-                $vsc_where_currency = function_exists( 'wprentals_get_option' ) ? esc_html( wprentals_get_option( 'wp_estate_where_currency_symbol', '' ) ) : '';
-                $vsc_listing_type   = function_exists( 'wprentals_get_option' ) ? wprentals_get_option( 'wp_estate_listing_unit_type', '' ) : '';
+                $ssc_currency       = function_exists( 'wprentals_get_option' ) ? esc_html( wprentals_get_option( 'wp_estate_currency_label_main', '' ) ) : '';
+                $ssc_where_currency = function_exists( 'wprentals_get_option' ) ? esc_html( wprentals_get_option( 'wp_estate_where_currency_symbol', '' ) ) : '';
+                $ssc_listing_type   = function_exists( 'wprentals_get_option' ) ? wprentals_get_option( 'wp_estate_listing_unit_type', '' ) : '';
 
                 while ( $rooms->have_posts() ) {
                     $rooms->the_post();
@@ -170,7 +170,7 @@ while ( have_posts() ) :
                         <div class="ssc-room-media">
                             <?php
                             if ( function_exists( 'wpestate_print_property_unit_slider' ) ) {
-                                wpestate_print_property_unit_slider( $room['id'], 'yes', $vsc_listing_type, $vsc_currency, $vsc_where_currency, $room_url );
+                                wpestate_print_property_unit_slider( $room['id'], 'yes', $ssc_listing_type, $ssc_currency, $ssc_where_currency, $room_url );
                             }
                             ?>
                         </div>
