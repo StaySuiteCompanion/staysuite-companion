@@ -83,4 +83,5 @@ return array(
     'StaySuite\\Companion\\Hotel\\Repository' => $baseDir . '/includes/Hotel/Repository.php',
     'StaySuite\\Companion\\Hotel\\RoomLink' => $baseDir . '/includes/Hotel/RoomLink.php',
     'StaySuite\\Companion\\Installer' => $baseDir . '/includes/Installer.php',
+    'StaySuite\\Companion\\Links' => $baseDir . '/includes/Links.php',
 );

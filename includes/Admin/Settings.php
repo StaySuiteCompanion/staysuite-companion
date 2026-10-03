@@ -13,6 +13,7 @@
 
 namespace StaySuite\Companion\Admin;
 
+use StaySuite\Companion\Links;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
@@ -247,6 +248,7 @@ class Settings {
             $asset['version'],
             true
         );
+        wp_localize_script( 'ssc-admin', 'sscLinks', Links::all() );
         wp_enqueue_style(
             'ssc-admin',
             SSC_URL . self::ADMIN_STYLE,

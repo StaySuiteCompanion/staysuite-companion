@@ -7,7 +7,18 @@
 import { PanelBody, Button } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 
+/**
+ * Canonical outbound links, passed from PHP (Links::all) via
+ * wp_localize_script. No hard-coded URLs in JS.
+ *
+ * @return {Object} Link list (may be empty outside wp-admin).
+ */
+function sscLinks() {
+    return (typeof window !== 'undefined' && window.sscLinks) || {};
+}
+
 export default function ProUpsell({ features }) {
+    const links = sscLinks();
     return (
         <PanelBody title={__('StaySuite Pro', 'staysuite-companion')} initialOpen={false}>
             <ul style={{ listStyle: 'disc', marginLeft: '18px' }}>
@@ -17,7 +28,7 @@ export default function ProUpsell({ features }) {
             </ul>
             <Button
                 variant="primary"
-                href="https://jktanmay.com"
+                href={links.pro}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ marginTop: '8px' }}

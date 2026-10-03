@@ -11,6 +11,8 @@
 
 namespace StaySuite\Companion\Blocks;
 
+use StaySuite\Companion\Links;
+
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
@@ -59,6 +61,7 @@ class Registry {
             $asset['version'],
             true
         );
+        wp_localize_script( 'ssc-editor', 'sscLinks', Links::all() );
     }
 
     /**

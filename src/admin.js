@@ -11,6 +11,16 @@ import apiFetch from '@wordpress/api-fetch';
 import { useEffect, useState } from 'react';
 import { __ } from '@wordpress/i18n';
 
+/**
+ * Canonical outbound links, passed from PHP (Links::all) via
+ * wp_localize_script. No hard-coded URLs in JS.
+ *
+ * @return {Object} Link list (may be empty outside wp-admin).
+ */
+function sscLinks() {
+    return (typeof window !== 'undefined' && window.sscLinks) || {};
+}
+
 function useSettings() {
     const [settings, setSettings] = useState(null);
     const [message, setMessage] = useState('');
@@ -152,6 +162,7 @@ const PRO_FEATURES = [
 ];
 
 function GoProTab() {
+    const links = sscLinks();
     return (
         <div className="ssc-tab-panel">
             <h2>{__('StaySuite Pro', 'staysuite-companion')}</h2>
@@ -162,7 +173,7 @@ function GoProTab() {
                 ))}
             </ul>
             <p>
-                <a className="button button-primary button-hero" href="https://jktanmay.com" target="_blank" rel="noopener noreferrer">
+                <a className="button button-primary button-hero" href={links.pro} target="_blank" rel="noopener noreferrer">
                     {__('Get StaySuite Pro', 'staysuite-companion')}
                 </a>
             </p>
@@ -173,6 +184,7 @@ function GoProTab() {
 function AdminApp({ logo, tabs, initial }) {
     const [active, setActive] = useState(initial || (tabs.length ? tabs[0].slug : ''));
     const current = tabs.find((t) => t.slug === active) || tabs[0];
+    const links = sscLinks();
     const select = (slug) => {
         setActive(slug);
         try {
@@ -189,10 +201,10 @@ function AdminApp({ logo, tabs, initial }) {
                 {logo && <img src={logo} alt="StaySuite" />}
                 <h1>StaySuite</h1>
                 <span className="ssc-admin-links">
-                    <a href="https://jktanmay.com" target="_blank" rel="noopener noreferrer">
+                    <a href={links.docs} target="_blank" rel="noopener noreferrer">
                         {__('Docs', 'staysuite-companion')}
                     </a>
-                    <a href="https://jktanmay.com" target="_blank" rel="noopener noreferrer">
+                    <a href={links.support} target="_blank" rel="noopener noreferrer">
                         {__('Support', 'staysuite-companion')}
                     </a>
                 </span>

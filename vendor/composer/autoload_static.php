@@ -98,6 +98,7 @@ class ComposerStaticInit68a864c75adfc4ceb5411937eed979bf
         'StaySuite\\Companion\\Hotel\\Repository' => __DIR__ . '/../..' . '/includes/Hotel/Repository.php',
         'StaySuite\\Companion\\Hotel\\RoomLink' => __DIR__ . '/../..' . '/includes/Hotel/RoomLink.php',
         'StaySuite\\Companion\\Installer' => __DIR__ . '/../..' . '/includes/Installer.php',
+        'StaySuite\\Companion\\Links' => __DIR__ . '/../..' . '/includes/Links.php',
     );
 
     public static function getInitializer(ClassLoader $loader)
