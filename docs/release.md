@@ -84,13 +84,25 @@ Two skills ship with the repository under `.claude/skills/` and automate the res
 
 ## wp.org publish
 
-```bash
-svn co https://plugins.svn.wordpress.org/staysuite-companion /tmp/ssc-svn
-cp dist/staysuite-companion-{version}.zip /tmp/ssc-svn/staysuite-companion/
-cd /tmp/ssc-svn && svn add staysuite-companion/{version}.zip
-svn ci -m "Release {version}" && svn cp staysuite-companion/{version}.zip staysuite-companion/trunk/ \
-  && svn ci -m "Release {version} to trunk" && svn up
-svn cp trunk staysuite-companion/tags/{version} && svn ci -m "Tag {version}"
+After approval the plugin lives in SVN. Layout:
+
+```
+trunk/                 <- plugin files, unzipped from dist/staysuite-companion-{version}.zip
+tags/1.0.0/            <- svn cp trunk tags/1.0.0
+assets/                <- contents of .wordpress-org/ (NOT inside trunk)
 ```
 
-Upload `assets/images/*` to the `/assets` folder on the first release if the plugin page should show screenshots.
+`.wordpress-org/` at the repo root is the staging area for the SVN
+`assets/` directory: icons, banners and screenshots (`screenshot-N.png`
+matching the readme captions). It is export-ignored from the GitHub zip
+and never ships inside the plugin.
+
+```bash
+svn co https://plugins.svn.wordpress.org/staysuite-companion /tmp/ssc-svn
+unzip -o dist/staysuite-companion-{version}.zip -d /tmp/ssc-build
+cp -R /tmp/ssc-build/staysuite-companion/. /tmp/ssc-svn/trunk/
+cp .wordpress-org/* /tmp/ssc-svn/assets/
+cd /tmp/ssc-svn && svn add trunk assets --force
+svn ci -m "Release {version} to trunk"
+svn cp trunk tags/{version} && svn ci -m "Tag {version}"
+```
