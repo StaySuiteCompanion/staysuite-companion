@@ -22,6 +22,8 @@ PACKAGE_FILE="package.json"
 PRODUCTION_PATHS=(
     "$MAIN_FILE"
     "$README_FILE"
+    "uninstall.php"
+    "LICENSE"
     "includes"
     "templates"
     "assets/build"

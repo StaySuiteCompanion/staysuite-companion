@@ -142,6 +142,20 @@ function SettingsTab() {
                     />
                 </label>
             </Row>
+            <h2>{__('Advanced', 'staysuite-companion')}</h2>
+            <Row
+                label={__('Uninstall', 'staysuite-companion')}
+                hint={__(
+                    'When on, uninstalling deletes Hotels, Group Requests and all StaySuite data. Off keeps your content.',
+                    'staysuite-companion'
+                )}
+            >
+                <Check
+                    label={__('Delete all StaySuite data when the plugin is uninstalled', 'staysuite-companion')}
+                    checked={settings.delete_on_uninstall}
+                    onChange={set('delete_on_uninstall')}
+                />
+            </Row>
             <div className="ssc-form-actions">
                 <button type="button" className="button button-primary" onClick={save}>
                     {__('Save settings', 'staysuite-companion')}

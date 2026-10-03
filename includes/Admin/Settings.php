@@ -57,14 +57,15 @@ class Settings {
      */
     public static function defaults() {
         return array(
-            'capsule'        => 1,
-            'default_adults' => 2,
-            'dividers'       => 1,
-            'animations'     => 1,
-            'hero_height'    => 75,
-            'color_mode'     => 'theme',
-            'color_submit'   => '#137699',
-            'color_hover'    => '#022947',
+            'capsule'             => 1,
+            'default_adults'      => 2,
+            'dividers'            => 1,
+            'animations'          => 1,
+            'hero_height'         => 75,
+            'color_mode'          => 'theme',
+            'color_submit'        => '#137699',
+            'color_hover'         => '#022947',
+            'delete_on_uninstall' => 0,
         );
     }
 
@@ -84,6 +85,7 @@ class Settings {
         $all['color_mode'] = ( $all['color_mode'] === 'custom' ) ? 'custom' : 'theme';
         $all['color_submit'] = self::hex_or_default( $all['color_submit'], '#137699' );
         $all['color_hover']  = self::hex_or_default( $all['color_hover'], '#022947' );
+        $all['delete_on_uninstall'] = ! empty( $all['delete_on_uninstall'] ) ? 1 : 0;
         if ( $key === null ) {
             return $all;
         }
@@ -109,6 +111,7 @@ class Settings {
             'color_mode'     => ( isset( $raw['color_mode'] ) && $raw['color_mode'] === 'custom' ) ? 'custom' : 'theme',
             'color_submit'   => self::hex_or_default( $raw['color_submit'] ?? '', '#137699' ),
             'color_hover'    => self::hex_or_default( $raw['color_hover'] ?? '', '#022947' ),
+            'delete_on_uninstall' => ! empty( $raw['delete_on_uninstall'] ) ? 1 : 0,
         );
     }
 
