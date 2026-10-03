@@ -10,5 +10,6 @@ One admin page (top-level **StaySuite** menu, below **Hotels**) with tabs — Ge
 | Animations (on) | Group form pop-out (`ssc-no-animations` opt-out class) |
 | Hero cover height (75 vh) | Emitted as `--ssc-hero-h`, clamped 30–100 |
 | Search colors (theme) | Follow customizer, or custom submit + hover hexes |
+| Delete all StaySuite data on uninstall (off, Advanced) | `uninstall.php` wipes Hotels, Group Requests, `_ssc_*` meta and options; off keeps content |
 
 Menu map: **Hotels** (generic building icon, right after Listings) holds All Hotels, Add New, Assign Rooms (paged, searchable, per-row + bulk assign). **StaySuite** (brand logo) holds the tab page (Settings + Go Pro, License + AI Settings tabs injected by Pro), Group Requests, and — only when Pro is absent — Go Pro.
