@@ -54,6 +54,11 @@ class RequestCPT {
     /**
      * Register the request post type (admin UI only).
      *
+     * Requests hold visitor names, emails and phone numbers, so every
+     * primitive capability maps to manage_options: administrators only.
+     * The parent StaySuite menu already requires manage_options, which
+     * keeps the screen out of reach for lower roles entirely.
+     *
      * @return void
      */
     public static function register() {
@@ -75,7 +80,20 @@ class RequestCPT {
 				'supports'     => array( 'title' ),
 				'show_in_rest' => false,
 				'capabilities' => array(
-					'create_posts' => 'edit_posts',
+					'edit_post'              => 'manage_options',
+					'read_post'              => 'manage_options',
+					'delete_post'            => 'manage_options',
+					'edit_posts'             => 'manage_options',
+					'edit_others_posts'      => 'manage_options',
+					'delete_posts'           => 'manage_options',
+					'publish_posts'          => 'manage_options',
+					'read_private_posts'     => 'manage_options',
+					'delete_private_posts'   => 'manage_options',
+					'delete_published_posts' => 'manage_options',
+					'delete_others_posts'    => 'manage_options',
+					'edit_private_posts'     => 'manage_options',
+					'edit_published_posts'   => 'manage_options',
+					'create_posts'           => 'manage_options',
 				),
 				'map_meta_cap' => true,
             )
