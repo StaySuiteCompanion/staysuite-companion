@@ -139,7 +139,10 @@ class TermImage {
     public function save( $term_id, $tt_id ) {
         // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Required by the term_edit_form action signature.
         unset( $tt_id );
-        if ( ! isset( $_POST['ssc_term_image_nonce'] ) || ! wp_verify_nonce( sanitize_key( $_POST['ssc_term_image_nonce'] ), 'ssc_term_image' ) ) {
+        $nonce = isset( $_POST['ssc_term_image_nonce'] ) && is_string( $_POST['ssc_term_image_nonce'] )
+            ? sanitize_key( wp_unslash( $_POST['ssc_term_image_nonce'] ) )
+            : '';
+        if ( '' === $nonce || ! wp_verify_nonce( $nonce, 'ssc_term_image' ) ) {
             return;
         }
         if ( ! current_user_can( 'manage_categories' ) ) {

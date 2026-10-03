@@ -97,8 +97,14 @@ class RoomLink {
      * @return void
      */
     public function save_meta( $post_id ) {
-        $full_edit = isset( $_POST['ssc_room_hotel_nonce'] ) && wp_verify_nonce( sanitize_key( $_POST['ssc_room_hotel_nonce'] ), 'ssc_room_hotel' );
-        $quick_edit = isset( $_POST['_inline_edit'] ) && wp_verify_nonce( sanitize_key( $_POST['_inline_edit'] ), 'inlineeditnonce' );
+        $room_nonce = isset( $_POST['ssc_room_hotel_nonce'] ) && is_string( $_POST['ssc_room_hotel_nonce'] )
+            ? sanitize_key( wp_unslash( $_POST['ssc_room_hotel_nonce'] ) )
+            : '';
+        $inline_nonce = isset( $_POST['_inline_edit'] ) && is_string( $_POST['_inline_edit'] )
+            ? sanitize_key( wp_unslash( $_POST['_inline_edit'] ) )
+            : '';
+        $full_edit = '' !== $room_nonce && wp_verify_nonce( $room_nonce, 'ssc_room_hotel' );
+        $quick_edit = '' !== $inline_nonce && wp_verify_nonce( $inline_nonce, 'inlineeditnonce' );
         if ( ! $full_edit && ! $quick_edit ) {
             return;
         }

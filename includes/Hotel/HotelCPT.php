@@ -153,7 +153,10 @@ class HotelCPT {
      * @return void
      */
     public function save_meta( $post_id ) {
-        if ( ! isset( $_POST['ssc_hotel_meta_nonce'] ) || ! wp_verify_nonce( sanitize_key( $_POST['ssc_hotel_meta_nonce'] ), 'ssc_hotel_meta' ) ) {
+        $nonce = isset( $_POST['ssc_hotel_meta_nonce'] ) && is_string( $_POST['ssc_hotel_meta_nonce'] )
+            ? sanitize_key( wp_unslash( $_POST['ssc_hotel_meta_nonce'] ) )
+            : '';
+        if ( '' === $nonce || ! wp_verify_nonce( $nonce, 'ssc_hotel_meta' ) ) {
             return;
         }
         if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {

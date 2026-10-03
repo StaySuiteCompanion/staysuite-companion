@@ -182,7 +182,10 @@ class RequestCPT {
      * @return void
      */
     public function save_status( $post_id ) {
-        if ( ! isset( $_POST['ssc_request_status_nonce'] ) || ! wp_verify_nonce( sanitize_key( $_POST['ssc_request_status_nonce'] ), 'ssc_request_status' ) ) {
+        $nonce = isset( $_POST['ssc_request_status_nonce'] ) && is_string( $_POST['ssc_request_status_nonce'] )
+            ? sanitize_key( wp_unslash( $_POST['ssc_request_status_nonce'] ) )
+            : '';
+        if ( '' === $nonce || ! wp_verify_nonce( $nonce, 'ssc_request_status' ) ) {
             return;
         }
         if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
