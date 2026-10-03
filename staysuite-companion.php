@@ -59,7 +59,7 @@ final class Plugin {
      *
      * @var string
      */
-    private $min_php = '7.4';
+    private $min_php = '8.1';
 
     /**
      * Holds shared class instances.
