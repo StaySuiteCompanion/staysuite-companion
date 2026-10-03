@@ -48,7 +48,7 @@ class TermImage {
     }
 
     /**
-     * Load the media picker on term screens.
+     * Load the media picker and field script on term screens.
      *
      * @param string $hook Current admin page hook.
      * @return void
@@ -58,6 +58,12 @@ class TermImage {
             return;
         }
         wp_enqueue_media();
+        wp_enqueue_script( 'ssc-term-image', SSC_URL . 'assets/js/ssc-term-image.js', array(), SSC_VERSION, true );
+        wp_localize_script(
+            'ssc-term-image', 'sscTermImage', array(
+				'title' => __( 'Featured photo', 'staysuite-companion' ),
+            )
+        );
     }
 
     /**
@@ -120,39 +126,6 @@ class TermImage {
             <button type="button" class="button ssc-term-image-clear"><?php esc_html_e( 'Clear', 'staysuite-companion' ); ?></button>
             <p class="description"><?php esc_html_e( 'Shown on destination tablet cards. Falls back to the gradient when empty.', 'staysuite-companion' ); ?></p>
         </div>
-        <script type="text/javascript">
-        (function ($) {
-            var frame = null;
-            function field() {
-                return $('#ssc_term_image_id');
-            }
-            $('.ssc-term-image-pick').on('click', function (e) {
-                e.preventDefault();
-                if (frame) {
-                    frame.open();
-                    return;
-                }
-                frame = wp.media({ title: 'Featured photo', multiple: false, library: { type: 'image' } });
-                frame.on('select', function () {
-                    var picked = frame.state().get('selection').first();
-                    if (!picked) {
-                        return;
-                    }
-                    field().val(picked.id);
-                    var url = picked.attributes && picked.attributes.sizes && picked.attributes.sizes.thumbnail
-                        ? picked.attributes.sizes.thumbnail.url
-                        : picked.get('url');
-                    $('.ssc-term-image-preview').html('<img src="' + url + '" alt="" style="max-width:200px;height:auto;border-radius:8px;">');
-                });
-                frame.open();
-            });
-            $('.ssc-term-image-clear').on('click', function (e) {
-                e.preventDefault();
-                field().val(0);
-                $('.ssc-term-image-preview').empty();
-            });
-        })(jQuery);
-        </script>
         <?php
     }
 

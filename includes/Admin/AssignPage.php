@@ -35,12 +35,20 @@ class AssignPage {
     const PER_PAGE = 50;
 
     /**
+     * Hook suffix of the submenu page, for script loading.
+     *
+     * @var string
+     */
+    private $hook_suffix = '';
+
+    /**
      * Wire up WordPress hooks.
      *
      * @return void
      */
     public function __construct() {
         add_action( 'admin_menu', array( $this, 'add_menu' ) );
+        add_action( 'admin_enqueue_scripts', array( $this, 'assets' ) );
     }
 
     /**
@@ -52,7 +60,7 @@ class AssignPage {
         if ( ! post_type_exists( 'estate_property' ) ) {
             return;
         }
-        add_submenu_page(
+        $this->hook_suffix = (string) add_submenu_page(
             'edit.php?post_type=ssc_hotel',
             esc_html__( 'Assign Hotels', 'staysuite-companion' ),
             esc_html__( 'Assign Hotels', 'staysuite-companion' ),
@@ -60,6 +68,19 @@ class AssignPage {
             self::PAGE_SLUG,
             array( $this, 'render' )
         );
+    }
+
+    /**
+     * Load the bulk-checkbox script on the assignment screen only.
+     *
+     * @param string $hook Current admin page hook.
+     * @return void
+     */
+    public function assets( $hook ) {
+        if ( '' === $this->hook_suffix || $hook !== $this->hook_suffix ) {
+            return;
+        }
+        wp_enqueue_script( 'ssc-assign', SSC_URL . 'assets/js/ssc-assign.js', array(), SSC_VERSION, true );
     }
 
     /**
@@ -336,19 +357,6 @@ class AssignPage {
                         <?php endif; ?>
                     </tbody>
                 </table>
-                <script type="text/javascript">
-                (function () {
-                    var all = document.getElementById('ssc_select_all');
-                    if (!all) {
-                        return;
-                    }
-                    all.addEventListener('change', function () {
-                        document.querySelectorAll('.ssc-bulk-check').forEach(function (box) {
-                            box.checked = all.checked;
-                        });
-                    });
-                })();
-                </script>
                 <p>
                     <input type="submit" name="ssc_assign_save" class="button button-primary" value="<?php esc_attr_e( 'Save assignments', 'staysuite-companion' ); ?>">
                 </p>
