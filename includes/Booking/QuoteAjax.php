@@ -28,6 +28,13 @@ class QuoteAjax {
     const NONCE_ACTION = 'ssc_group_quote';
 
     /**
+     * Honeypot field name. Bots fill it, humans never see it.
+     *
+     * @var string
+     */
+    const HONEYPOT_FIELD = 'ssc_company';
+
+    /**
      * Maximum matches returned to the browser.
      *
      * @var int
@@ -49,6 +56,20 @@ class QuoteAjax {
     public function __construct() {
         add_action( 'wp_ajax_ssc_group_quote', array( $this, 'handle' ) );
         add_action( 'wp_ajax_nopriv_ssc_group_quote', array( $this, 'handle' ) );
+        add_action( 'wp_ajax_ssc_quote_nonce', array( $this, 'serve_nonce' ) );
+        add_action( 'wp_ajax_nopriv_ssc_quote_nonce', array( $this, 'serve_nonce' ) );
+    }
+
+    /**
+     * Serve a fresh quote nonce.
+     *
+     * Pages may be cached, so the localized nonce can go stale. The form
+     * refreshes it through this endpoint and retries once (see G.4).
+     *
+     * @return void
+     */
+    public function serve_nonce() {
+        wp_send_json_success( array( 'nonce' => wp_create_nonce( self::NONCE_ACTION ) ) );
     }
 
     /**
@@ -57,11 +78,32 @@ class QuoteAjax {
      * @return void
      */
     public function handle() {
-        check_ajax_referer( self::NONCE_ACTION, 'nonce' );
-        $input = $this->sanitize_input( $_POST );
+        $raw = is_array( $_POST ) ? wp_unslash( $_POST ) : array();
+        $nonce = isset( $raw['nonce'] ) && is_string( $raw['nonce'] ) ? sanitize_key( $raw['nonce'] ) : '';
+        if ( '' === $nonce || ! wp_verify_nonce( $nonce, self::NONCE_ACTION ) ) {
+            wp_send_json_error(
+                array(
+                    'message' => __( 'Your session expired. Please try again.', 'staysuite-companion' ),
+                    'code'    => 'ssc_nonce_expired',
+                ),
+                403
+            );
+        }
+        if ( isset( $raw[ self::HONEYPOT_FIELD ] ) && '' !== $raw[ self::HONEYPOT_FIELD ] ) {
+            wp_send_json_error(
+                array(
+                    'message' => __( 'Your request could not be submitted. Please try again.', 'staysuite-companion' ),
+                )
+            );
+        }
+        $input = $this->sanitize_input( $raw );
         $error = $this->validate( $input );
         if ( $error !== '' ) {
             wp_send_json_error( array( 'message' => $error ) );
+        }
+        $limited = $this->check_rate_limit();
+        if ( $limited !== '' ) {
+            wp_send_json_error( array( 'message' => $limited ), 429 );
         }
         $matches = $this->find_matches( $input );
         $request_id = $this->persist( $input, $matches );
@@ -88,7 +130,11 @@ class QuoteAjax {
     /**
      * Sanitize raw submission data.
      *
-     * @param array<string,mixed> $raw Raw POST data.
+     * Lengths are capped (name 100, email 254, phone 40, requirements
+     * 2000) and party sizes bounded (rooms 50, guests 500). Dates pass
+     * through here and are strictly validated in validate().
+     *
+     * @param array<string,mixed> $raw Unslashed POST data.
      * @return array<string,mixed> Sanitized input.
      */
     private function sanitize_input( $raw ) {
@@ -104,17 +150,19 @@ class QuoteAjax {
             'location_text' => isset( $raw['location_text'] ) ? sanitize_text_field( $raw['location_text'] ) : '',
             'check_in'     => isset( $raw['check_in'] ) ? sanitize_text_field( $raw['check_in'] ) : '',
             'check_out'    => isset( $raw['check_out'] ) ? sanitize_text_field( $raw['check_out'] ) : '',
-            'rooms'        => isset( $raw['rooms'] ) ? max( 1, intval( $raw['rooms'] ) ) : 1,
-            'guests'       => isset( $raw['guests'] ) ? max( 1, intval( $raw['guests'] ) ) : 2,
-            'male'         => isset( $raw['male'] ) ? max( 0, intval( $raw['male'] ) ) : 0,
-            'female'       => isset( $raw['female'] ) ? max( 0, intval( $raw['female'] ) ) : 0,
+            'rooms'        => isset( $raw['rooms'] ) ? min( 50, max( 1, intval( $raw['rooms'] ) ) ) : 1,
+            'guests'       => isset( $raw['guests'] ) ? min( 500, max( 1, intval( $raw['guests'] ) ) ) : 2,
+            'male'         => isset( $raw['male'] ) ? min( 500, max( 0, intval( $raw['male'] ) ) ) : 0,
+            'female'       => isset( $raw['female'] ) ? min( 500, max( 0, intval( $raw['female'] ) ) ) : 0,
             'budget_min'   => max( 0, $budget_min ),
             'budget_max'   => max( 0, $budget_max ),
-            'name'         => isset( $raw['name'] ) ? sanitize_text_field( $raw['name'] ) : '',
-            'email'        => isset( $raw['email'] ) ? sanitize_email( $raw['email'] ) : '',
-            'phone'        => isset( $raw['phone'] ) ? sanitize_text_field( $raw['phone'] ) : '',
-            'requirements' => isset( $raw['requirements'] ) ? sanitize_textarea_field( $raw['requirements'] ) : '',
+            'name'         => isset( $raw['name'] ) ? self::cap_length( sanitize_text_field( $raw['name'] ), 100 ) : '',
+            'email'        => isset( $raw['email'] ) ? self::cap_length( sanitize_email( $raw['email'] ), 254 ) : '',
+            'phone'        => isset( $raw['phone'] ) ? self::cap_length( sanitize_text_field( $raw['phone'] ), 40 ) : '',
+            'requirements' => isset( $raw['requirements'] ) ? self::cap_length( sanitize_textarea_field( $raw['requirements'] ), 2000 ) : '',
         );
+        $input['check_in']  = self::normalize_date( $input['check_in'] );
+        $input['check_out'] = self::normalize_date( $input['check_out'] );
         /**
          * Filter the sanitized quote payload (Pro: add-ons, pricing options).
          *
@@ -122,6 +170,110 @@ class QuoteAjax {
          * @param array<string,mixed> $raw   Raw POST data.
          */
         return apply_filters( 'ssc_quote_payload', $input, $raw );
+    }
+
+    /**
+     * Truncate a string to a maximum length (multibyte-safe when available).
+     *
+     * @param string $value  Value to cap.
+     * @param int    $length Maximum characters.
+     * @return string Capped value.
+     */
+    private static function cap_length( $value, $length ) {
+        $value = (string) $value;
+        if ( function_exists( 'mb_substr' ) ) {
+            return mb_substr( $value, 0, $length );
+        }
+        return substr( $value, 0, $length );
+    }
+
+    /**
+     * Normalize a submitted date to Y-m-d.
+     *
+     * Accepts strict Y-m-d first, then the theme's own datepicker format
+     * (group mode reads theme fields verbatim), so theme-fed values are
+     * not rejected. Anything else becomes an empty string and fails
+     * validation.
+     *
+     * @param string $value Raw date value.
+     * @return string Y-m-d date or empty string.
+     */
+    private static function normalize_date( $value ) {
+        $value = trim( (string) $value );
+        if ( '' === $value ) {
+            return '';
+        }
+        $parsed = self::parse_ymd( $value );
+        if ( null !== $parsed ) {
+            return $parsed;
+        }
+        if ( function_exists( 'wprentals_get_option' ) ) {
+            $parsed = self::parse_theme_date( $value, intval( wprentals_get_option( 'wp_estate_date_format', 0 ) ) );
+            if ( null !== $parsed ) {
+                return $parsed;
+            }
+        }
+        return '';
+    }
+
+    /**
+     * Parse a strict Y-m-d calendar date.
+     *
+     * @param string $value Candidate date.
+     * @return string|null Canonical Y-m-d or null.
+     */
+    private static function parse_ymd( $value ) {
+        if ( 1 !== preg_match( '/^(\d{4})-(\d{2})-(\d{2})$/', $value, $m ) ) {
+            return null;
+        }
+        $year = intval( $m[1] );
+        $month = intval( $m[2] );
+        $day = intval( $m[3] );
+        if ( ! checkdate( $month, $day, $year ) ) {
+            return null;
+        }
+        return sprintf( '%04d-%02d-%02d', $year, $month, $day );
+    }
+
+    /**
+     * Parse a date in the theme's configured datepicker format.
+     *
+     * The theme stores its format as 0-5 (yy-mm-dd, yy-dd-mm, dd-mm-yy,
+     * mm-dd-yy, dd-yy-mm, mm-yy-dd). Two-digit years assume the 2000s
+     * below 70, the 1900s above.
+     *
+     * @param string $value  Candidate date.
+     * @param int    $format Theme format index.
+     * @return string|null Canonical Y-m-d or null.
+     */
+    private static function parse_theme_date( $value, $format ) {
+        $orders = array(
+            0 => array( 'Y', 'm', 'd' ),
+            1 => array( 'Y', 'd', 'm' ),
+            2 => array( 'd', 'm', 'Y' ),
+            3 => array( 'm', 'd', 'Y' ),
+            4 => array( 'd', 'Y', 'm' ),
+            5 => array( 'm', 'Y', 'd' ),
+        );
+        if ( ! isset( $orders[ $format ] ) ) {
+            return null;
+        }
+        $parts = preg_split( '/\D+/', $value );
+        if ( ! is_array( $parts ) || count( $parts ) !== 3 ) {
+            return null;
+        }
+        $map = array_combine( $orders[ $format ], array_map( 'intval', $parts ) );
+        if ( ! is_array( $map ) ) {
+            return null;
+        }
+        $year = $map['Y'];
+        if ( $year < 100 ) {
+            $year += ( $year < 70 ) ? 2000 : 1900;
+        }
+        if ( ! checkdate( $map['m'], $map['d'], $year ) ) {
+            return null;
+        }
+        return sprintf( '%04d-%02d-%02d', $year, $map['m'], $map['d'] );
     }
 
     /**
@@ -141,9 +293,60 @@ class QuoteAjax {
             return esc_html__( 'Please choose a valid place.', 'staysuite-companion' );
         }
         $dates_set = $input['check_in'] !== '' || $input['check_out'] !== '';
-        if ( $dates_set && ( strtotime( $input['check_in'] ) === false || strtotime( $input['check_out'] ) === false ) ) {
-            return esc_html__( 'Please enter valid check-in and check-out dates.', 'staysuite-companion' );
+        if ( $dates_set ) {
+            if ( $input['check_in'] === '' || $input['check_out'] === '' ) {
+                return esc_html__( 'Please enter valid check-in and check-out dates.', 'staysuite-companion' );
+            }
+            try {
+                $check_in  = new \DateTime( $input['check_in'], wp_timezone() );
+                $check_out = new \DateTime( $input['check_out'], wp_timezone() );
+                $today     = new \DateTime( 'today', wp_timezone() );
+            } catch ( \Exception $e ) {
+                return esc_html__( 'Please enter valid check-in and check-out dates.', 'staysuite-companion' );
+            }
+            if ( $check_out <= $check_in ) {
+                return esc_html__( 'Check-out must be after check-in.', 'staysuite-companion' );
+            }
+            if ( $check_in < $today ) {
+                return esc_html__( 'Check-in cannot be in the past.', 'staysuite-companion' );
+            }
         }
+        return '';
+    }
+
+    /**
+     * Enforce per-IP quote throttling with transients.
+     *
+     * Only the hash of the address is used as the transient key; the raw
+     * IP is never stored. Limit shape is filterable:
+     * `array( 'max' => 5, 'window' => 600 )`.
+     *
+     * @return string Error message when limited, empty string otherwise.
+     */
+    private function check_rate_limit() {
+        $limit = apply_filters(
+            'ssc_quote_rate_limit', array(
+				'max' => 5,
+				'window' => 600,
+            )
+        );
+        if ( ! is_array( $limit ) ) {
+            $limit = array( 'max' => $limit );
+        }
+        $max = isset( $limit['max'] ) ? max( 1, intval( $limit['max'] ) ) : 5;
+        $window = isset( $limit['window'] ) ? max( 60, intval( $limit['window'] ) ) : 600;
+        $ip = isset( $_SERVER['REMOTE_ADDR'] ) && is_string( $_SERVER['REMOTE_ADDR'] )
+            ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
+            : '';
+        if ( '' === $ip ) {
+            return '';
+        }
+        $key = 'ssc_rl_' . md5( $ip );
+        $count = intval( get_transient( $key ) );
+        if ( $count >= $max ) {
+            return esc_html__( 'Too many requests. Please try again in a few minutes.', 'staysuite-companion' );
+        }
+        set_transient( $key, $count + 1, $window );
         return '';
     }
 
@@ -282,7 +485,12 @@ class QuoteAjax {
         $city_name = $input['city'] !== '' ? $input['city'] : ( $input['location_text'] !== '' ? $input['location_text'] : 'anywhere' );
         $request_id = wp_insert_post(
             array(
-				'post_title'  => sprintf( 'Group request — %s — %s', $input['name'], $city_name ),
+				'post_title'  => sprintf(
+                    /* translators: 1: visitor name, 2: city. */
+                    __( 'Group request — %1$s — %2$s', 'staysuite-companion' ),
+                    $input['name'],
+                    $city_name
+                ),
 				'post_type'   => RequestCPT::POST_TYPE,
 				'post_status' => 'publish',
             )
@@ -311,24 +519,73 @@ class QuoteAjax {
             return;
         }
         $lines = array(
-            sprintf( 'Name: %s', $input['name'] ),
-            sprintf( 'Email: %s', $input['email'] ),
-            sprintf( 'Phone: %s', $input['phone'] ),
-            sprintf( 'City: %s', $input['city'] ),
-            sprintf( 'Dates: %s → %s', $input['check_in'], $input['check_out'] ),
-            sprintf( 'Rooms: %d · Guests: %d (M:%d F:%d)', $input['rooms'], $input['guests'], $input['male'], $input['female'] ),
-            sprintf( 'Budget: %s – %s', $input['budget_min'], $input['budget_max'] ),
+            sprintf(
+                /* translators: %s: visitor name. */
+                __( 'Name: %s', 'staysuite-companion' ),
+                $input['name']
+            ),
+            sprintf(
+                /* translators: %s: visitor email. */
+                __( 'Email: %s', 'staysuite-companion' ),
+                $input['email']
+            ),
+            sprintf(
+                /* translators: %s: visitor phone. */
+                __( 'Phone: %s', 'staysuite-companion' ),
+                $input['phone']
+            ),
+            sprintf(
+                /* translators: %s: city slug. */
+                __( 'City: %s', 'staysuite-companion' ),
+                $input['city']
+            ),
+            sprintf(
+                /* translators: 1: check-in date, 2: check-out date. */
+                __( 'Dates: %1$s → %2$s', 'staysuite-companion' ),
+                $input['check_in'],
+                $input['check_out']
+            ),
+            sprintf(
+                /* translators: 1: rooms, 2: guests, 3: male count, 4: female count. */
+                __( 'Rooms: %1$d · Guests: %2$d (M:%3$d F:%4$d)', 'staysuite-companion' ),
+                $input['rooms'],
+                $input['guests'],
+                $input['male'],
+                $input['female']
+            ),
+            sprintf(
+                /* translators: 1: minimum budget, 2: maximum budget. */
+                __( 'Budget: %1$s – %2$s', 'staysuite-companion' ),
+                $input['budget_min'],
+                $input['budget_max']
+            ),
             '',
-            'Requirements:',
+            __( 'Requirements:', 'staysuite-companion' ),
             $input['requirements'],
             '',
-            sprintf( 'Suggested properties: %d', count( $matches ) ),
-            sprintf( 'Review: %s', get_edit_post_link( $request_id, 'display' ) ),
+            sprintf(
+                /* translators: %d: number of matching properties. */
+                __( 'Suggested properties: %d', 'staysuite-companion' ),
+                count( $matches )
+            ),
+            sprintf(
+                /* translators: %s: edit-post URL. */
+                __( 'Review: %s', 'staysuite-companion' ),
+                get_edit_post_link( $request_id, 'display' )
+            ),
         );
         $headers = array( 'Content-Type: text/plain; charset=UTF-8' );
+        if ( is_email( $input['email'] ) ) {
+            $headers[] = 'Reply-To: ' . $input['email'];
+        }
         wp_mail(
             get_option( 'admin_email' ),
-            sprintf( '[%s] New group booking request #%d', get_bloginfo( 'name' ), $request_id ),
+            sprintf(
+                /* translators: 1: site name, 2: request ID. */
+                __( '[%1$s] New group booking request #%2$d', 'staysuite-companion' ),
+                get_bloginfo( 'name' ),
+                $request_id
+            ),
             implode( "\n", $lines ),
             $headers
         );

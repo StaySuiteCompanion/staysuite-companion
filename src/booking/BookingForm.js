@@ -51,6 +51,8 @@ const initialForm = {
     email: '',
     phone: '',
     requirements: '',
+    // Honeypot: bots fill it, humans never see it (server rejects non-empty).
+    ssc_company: '',
 };
 
 export default function BookingForm({ title }) {
@@ -60,6 +62,61 @@ export default function BookingForm({ title }) {
 
     const set = (key) => (event) => {
         setForm((prev) => ({ ...prev, [key]: event.target.value }));
+    };
+
+    const handleResult = (res) => {
+        if (res && res.success) {
+            setState({
+                status: 'done',
+                message: '',
+                matches: res.data.matches || [],
+                total: res.data.total || 0,
+            });
+        } else {
+            setState({
+                status: 'error',
+                message:
+                    (res && res.data && res.data.message) ||
+                    __('Something went wrong. Please try again.', 'staysuite-companion'),
+                matches: [],
+                total: 0,
+            });
+        }
+    };
+
+    const sendQuote = (payload, retried) => {
+        const body = new URLSearchParams();
+        body.append('action', 'ssc_group_quote');
+        body.append('nonce', sscBooking.quote_nonce);
+        Object.entries(payload).forEach(([key, value]) => body.append(key, value));
+
+        fetch(sscBooking.ajaxurl, { method: 'POST', credentials: 'same-origin', body })
+            .then((response) => response.json())
+            .then((res) => {
+                // Cached pages carry stale nonces: refresh once and retry.
+                if (res && !res.success && res.data && res.data.code === 'ssc_nonce_expired' && !retried) {
+                    refreshNonceAndRetry(payload);
+                    return;
+                }
+                handleResult(res);
+            })
+            .catch(() => handleResult(null));
+    };
+
+    const refreshNonceAndRetry = (payload) => {
+        const refresh = new URLSearchParams();
+        refresh.append('action', 'ssc_quote_nonce');
+        fetch(sscBooking.ajaxurl, { method: 'POST', credentials: 'same-origin', body: refresh })
+            .then((response) => response.json())
+            .then((res) => {
+                if (res && res.success && res.data && res.data.nonce) {
+                    sscBooking.quote_nonce = res.data.nonce;
+                    sendQuote(payload, true);
+                } else {
+                    handleResult(res);
+                }
+            })
+            .catch(() => handleResult(null));
     };
 
     const doSubmit = () => {
@@ -76,40 +133,7 @@ export default function BookingForm({ title }) {
             payload.city = '';
         }
 
-        const body = new URLSearchParams();
-        body.append('action', 'ssc_group_quote');
-        body.append('nonce', sscBooking.quote_nonce);
-        Object.entries(payload).forEach(([key, value]) => body.append(key, value));
-
-        fetch(sscBooking.ajaxurl, { method: 'POST', credentials: 'same-origin', body })
-            .then((response) => response.json())
-            .then((res) => {
-                if (res && res.success) {
-                    setState({
-                        status: 'done',
-                        message: '',
-                        matches: res.data.matches || [],
-                        total: res.data.total || 0,
-                    });
-                } else {
-                    setState({
-                        status: 'error',
-                        message:
-                            (res && res.data && res.data.message) ||
-                            __('Something went wrong. Please try again.', 'staysuite-companion'),
-                        matches: [],
-                        total: 0,
-                    });
-                }
-            })
-            .catch(() =>
-                setState({
-                    status: 'error',
-                    message: __('Something went wrong. Please try again.', 'staysuite-companion'),
-                    matches: [],
-                    total: 0,
-                })
-            );
+        sendQuote(payload, false);
     };
 
     const submitRef = useRef(null);
@@ -223,6 +247,17 @@ export default function BookingForm({ title }) {
                         ? __('Finding stays…', 'staysuite-companion')
                         : __('Get quote', 'staysuite-companion')}
                 </button>
+                {/* Honeypot: hidden from humans, bots fill it and get rejected. */}
+                <input
+                    type="text"
+                    name="ssc_company"
+                    value={form.ssc_company}
+                    onChange={set('ssc_company')}
+                    tabIndex={-1}
+                    autoComplete="off"
+                    aria-hidden="true"
+                    style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0 }}
+                />
             </form>
 
             {state.status === 'error' && <p className="ssc-booking-error">{state.message}</p>}
