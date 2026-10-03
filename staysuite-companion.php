@@ -1,15 +1,16 @@
 <?php
 /**
- * Plugin Name: StaySuite Companion for WpRentals
- * Description: Hotel grouping, homepage blocks and group booking for WpRentals. Works alongside the theme — no theme files are modified.
- * Plugin URI: https://jktanmay.com
- * Author: Tanmay Kirtania
- * Author URI: https://jktanmay.com
- * Version: 0.2.1
- * License: GPL-3.0-or-later
- * Text Domain: staysuite-companion
- * Domain Path: /languages
- * Requires PHP: 7.4
+ * Plugin Name:       StaySuite Companion for WpRentals
+ * Plugin URI:        https://jktanmay.com/products/staysuite-companion
+ * Description:       Hotel pages, homepage booking blocks and group quote requests for the WpRentals theme. No theme files are modified.
+ * Version:           1.0.0
+ * Requires at least: 6.0
+ * Requires PHP:      8.1
+ * Author:            Tanmay Kirtania
+ * Author URI:        https://jktanmay.com
+ * License:           GPL v3 or later
+ * License URI:       https://www.gnu.org/licenses/gpl-3.0.html
+ * Text Domain:       staysuite-companion
  *
  * @package StaySuite\Companion
  * @author Tanmay Kirtania <jktanmay@gmail.com>
@@ -33,7 +34,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-define( 'SSC_VERSION', '0.2.1' );
+define( 'SSC_VERSION', '1.0.0' );
 define( 'SSC_FILE', __FILE__ );
 define( 'SSC_PATH', plugin_dir_path( __FILE__ ) );
 define( 'SSC_URL', plugin_dir_url( __FILE__ ) );
@@ -191,23 +192,9 @@ final class Plugin {
      * @return void
      */
     private function init_actions() {
-        add_action( 'init', array( $this, 'localization_setup' ) );
         add_action( 'init', array( __NAMESPACE__ . '\Installer', 'maybe_migrate' ), 5 );
         add_filter( 'plugin_action_links_' . plugin_basename( SSC_FILE ), array( $this, 'plugin_action_links' ) );
         add_action( 'admin_notices', array( $this, 'theme_check_notice' ) );
-    }
-
-    /**
-     * Load plugin translations on init (WP 6.7 compatible).
-     *
-     * @return void
-     */
-    public function localization_setup() {
-        load_plugin_textdomain(
-            'staysuite-companion',
-            false,
-            dirname( plugin_basename( SSC_FILE ) ) . '/languages/'
-        );
     }
 
     /**

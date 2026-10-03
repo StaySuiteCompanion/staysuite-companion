@@ -43,7 +43,7 @@ done
 if [ -z "$VERSION" ]; then
     VERSION="$(version_get)"
 fi
-[ -n "$VERSION" ] || die "Could not determine version. Pass one explicitly: bin/build.sh 0.2.1"
+[ -n "$VERSION" ] || die "Could not determine version. Pass one explicitly: bin/build.sh 1.0.0"
 
 log "Building $SLUG $VERSION"
 

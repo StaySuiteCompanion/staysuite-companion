@@ -3,9 +3,9 @@
 Two commands, both driven by `bin/lib.sh` (the single place where the release layout is defined).
 
 ```bash
-bin/release.sh                # patch release: 0.2.0 -> 0.2.1
-bin/release.sh --minor        # 0.2.1 -> 0.3.0
-bin/release.sh --major        # 0.3.0 -> 1.0.0
+bin/release.sh                # patch release: 1.0.0 -> 1.0.1
+bin/release.sh --minor        # 1.0.0 -> 1.1.0
+bin/release.sh --major        # 1.0.0 -> 2.0.0
 bin/build.sh                  # production zip only
 ```
 
@@ -42,7 +42,7 @@ bin/release.sh [--minor|--major|--set X.Y.Z] [--min-free X.Y.Z]
                [--dry-run] [--no-push] [--no-gh] [--sync-only] [--allow-dirty] [--branch NAME]
 ```
 
-**Version bump** — no flag means a patch (`0.2.0 → 0.2.1`), `--minor` raises the middle number and zeroes the last (`0.2.1 → 0.3.0`), `--major` raises the first and zeroes the rest (`0.3.0 → 1.0.0`). `--set X.Y.Z` sets an exact number. This is the only command in the repository that writes a version; `bin/build.sh` never touches one.
+**Version bump** — no flag means a patch (`1.0.0 → 1.0.1`), `--minor` raises the middle number and zeroes the last (`1.0.0 → 1.1.0`), `--major` raises the first and zeroes the rest (`1.0.0 → 2.0.0`). `--set X.Y.Z` sets an exact number. This is the only command in the repository that writes a version; `bin/build.sh` never touches one.
 
 **Everywhere the version lives** — one command writes all of them, because each drift surfaces differently in the field:
 
@@ -71,7 +71,7 @@ Order of operations:
 
 ## Version policy
 
-No flag is a patch release (bug fixes, no behaviour change). `--minor` is for new blocks, settings and hooks. `--major` is for breaking changes, renamed meta keys, or a data migration. Tags are `v{version}` (`v0.2.1`); the wp.org tag is the bare version.
+No flag is a patch release (bug fixes, no behaviour change). `--minor` is for new blocks, settings and hooks. `--major` is for breaking changes, renamed meta keys, or a data migration. Tags are `v{version}` (`v1.0.0`); the wp.org tag is the bare version.
 
 ## Commit style
 
@@ -80,7 +80,7 @@ The release script does not care how commits are worded, but Conventional Commit
 Two skills ship with the repository under `.claude/skills/` and automate the rest of the process:
 
 - `wp-plugin-release` — what to commit, version placement, wp.org SVN publishing.
-- `wp-changelog` — turning `git log v0.2.0..HEAD` into the `readme.txt` entry. Its `scripts/changelog-collect.sh` collects and groups the commits for you.
+- `wp-changelog` — turning `git log v1.0.0..HEAD` into the `readme.txt` entry. Its `scripts/changelog-collect.sh` collects and groups the commits for you.
 
 ## wp.org publish
 

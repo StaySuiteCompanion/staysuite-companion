@@ -23,8 +23,8 @@ npm run watch:css         # rebuild styles on save; pair with npm start
 npm run build:dist        # production zip → dist/
 
 bin/build.sh              # minimal production zip
-bin/release.sh            # patch release: 0.2.0 → 0.2.1
-bin/release.sh --minor    # 0.2.1 → 0.3.0
+bin/release.sh            # patch release: 1.0.0 → 1.0.1
+bin/release.sh --minor    # 1.0.0 → 1.1.0
 bin/release.sh --major    # 0.3.0 → 1.0.0
 bin/release.sh --dry-run  # show every step, change nothing
 ```

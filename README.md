@@ -29,9 +29,9 @@ PHP follows WordPress coding standards with PHPDoc everywhere; JS is React via `
 ## Release
 
 ```bash
-bin/release.sh             # patch: 0.2.0 -> 0.2.1
-bin/release.sh --minor     # 0.2.1 -> 0.3.0
-bin/release.sh --major     # 0.3.0 -> 1.0.0
+bin/release.sh             # patch: 1.0.0 -> 1.0.1
+bin/release.sh --minor     # 1.0.0 -> 1.1.0
+bin/release.sh --major     # 1.0.0 -> 2.0.0
 bin/build.sh               # minimal production zip → dist/
 ```
 
