@@ -687,6 +687,26 @@ class Renderer {
     }
 
     /**
+     * Bundled search-bar icon in Elementor media-control shape.
+     *
+     * The widget renders these through Icons_Manager, which falls back to
+     * an <img> when the attachment id does not resolve — so local files
+     * work with id 0 and no hotlinking or foreign media ids are needed.
+     *
+     * @param string $file Icon file under assets/images/icons/.
+     * @return array<string,mixed> Elementor icon setting.
+     */
+    private static function search_icon( $file ) {
+        return array(
+            'value'   => array(
+                'url' => SSC_URL . 'assets/images/icons/' . $file,
+                'id'  => 0,
+            ),
+            'library' => 'svg',
+        );
+    }
+
+    /**
      * Preset widget settings for the hero search bar.
      *
      * Mirrors the reference Search Form Builder instance (pill radius 58,
@@ -696,27 +716,9 @@ class Renderer {
      * @return array<string,mixed> Widget settings.
      */
     private static function elementor_search_settings() {
-        $location = array(
-			'value' => array(
-				'url' => 'https://paphos.wprentals.org/wp-content/uploads/2023/05/location-1.svg',
-				'id' => 39649,
-			),
-			'library' => 'svg',
-		);
-        $calendar = array(
-			'value' => array(
-				'url' => 'https://paphos.wprentals.org/wp-content/uploads/2023/05/calendar.svg',
-				'id' => 39709,
-			),
-			'library' => 'svg',
-		);
-        $user = array(
-			'value' => array(
-				'url' => 'https://paphos.wprentals.org/wp-content/uploads/2023/05/user.svg',
-				'id' => 39712,
-			),
-			'library' => 'svg',
-		);
+        $location = self::search_icon( 'location.svg' );
+        $calendar = self::search_icon( 'calendar.svg' );
+        $user     = self::search_icon( 'user.svg' );
         $settings = array(
             'form_fields' => array(
                 array(
@@ -762,13 +764,7 @@ class Renderer {
             'form_field_show_exra_details'  => '',
             'submit_button_text'            => '',
             'submit_button_width'           => '10',
-            'search_icon_button'            => array(
-				'value' => array(
-					'url' => 'https://paphos.wprentals.org/wp-content/uploads/2022/11/search.svg',
-					'id' => 39328,
-				),
-				'library' => 'svg',
-			),
+            'search_icon_button'            => self::search_icon( 'search.svg' ),
         );
         /**
          * Filter hero search widget settings.
@@ -788,20 +784,8 @@ class Renderer {
      * @return array<string,mixed> Widget settings.
      */
     private static function hotel_search_settings() {
-        $calendar = array(
-			'value' => array(
-				'url' => 'https://paphos.wprentals.org/wp-content/uploads/2023/05/calendar.svg',
-				'id' => 39709,
-			),
-			'library' => 'svg',
-		);
-        $user = array(
-			'value' => array(
-				'url' => 'https://paphos.wprentals.org/wp-content/uploads/2023/05/user.svg',
-				'id' => 39712,
-			),
-			'library' => 'svg',
-		);
+        $calendar = self::search_icon( 'calendar.svg' );
+        $user     = self::search_icon( 'user.svg' );
         $settings = array(
             'form_fields' => array(
                 array(
