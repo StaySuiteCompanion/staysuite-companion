@@ -4,7 +4,7 @@ Separate plugin (`staysuite-companion-pro`), never bundled with free. Contract:
 
 ## Gates
 
-* `Requires Plugins: staysuite-companion` header (WP 6.5+) **plus** runtime gate: boots only when `SSC_VERSION` exists and is `>= 0.2.0`, else admin notice. Free boots at `plugins_loaded:5`, Pro at `:20`.
+* `Requires Plugins: staysuite-companion` header (WP 6.5+) **plus** runtime gate: boots only when `SSC_VERSION` exists and is `>= 1.0.0`, else admin notice. Free boots at `plugins_loaded:5`, Pro at `:20`.
 * Free stays fully functional with Pro absent or unlicensed.
 
 ## License & updates
