@@ -62,6 +62,20 @@ final class Plugin {
     private $min_php = '8.1';
 
     /**
+     * User meta key remembering the theme-notice dismissal.
+     *
+     * @var string
+     */
+    const NOTICE_DISMISS_META = 'ssc_theme_notice_dismissed';
+
+    /**
+     * Nonce action for notice dismissal.
+     *
+     * @var string
+     */
+    const NOTICE_NONCE_ACTION = 'ssc_dismiss_notice';
+
+    /**
      * Holds shared class instances.
      *
      * @var array<string, object>
@@ -194,6 +208,8 @@ final class Plugin {
     private function init_actions() {
         add_filter( 'plugin_action_links_' . plugin_basename( SSC_FILE ), array( $this, 'plugin_action_links' ) );
         add_action( 'admin_notices', array( $this, 'theme_check_notice' ) );
+        add_action( 'admin_enqueue_scripts', array( $this, 'notice_assets' ) );
+        add_action( 'wp_ajax_ssc_dismiss_notice', array( $this, 'dismiss_notice' ) );
     }
 
     /**
@@ -211,14 +227,97 @@ final class Plugin {
     /**
      * Warn when the active theme is not WpRentals.
      *
+     * Administrators only, dismissed per user, and only on the Plugins
+     * screen and StaySuite/Hotels screens — never a global nag.
+     *
      * @return void
      */
     public function theme_check_notice() {
-        if ( get_template() !== 'wprentals' ) {
-            print '<div class="notice notice-warning"><p>'
-                . esc_html__( 'StaySuite Companion for WpRentals is built for the WpRentals theme. Some features may not work with the active theme.', 'staysuite-companion' )
-                . '</p></div>';
+        if ( get_template() === Installer::REQUIRED_THEME ) {
+            return;
         }
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        if ( get_user_meta( get_current_user_id(), self::NOTICE_DISMISS_META, true ) ) {
+            return;
+        }
+        if ( ! $this->is_notice_screen() ) {
+            return;
+        }
+        printf(
+            '<div class="notice notice-warning is-dismissible" data-ssc-dismissible="theme"><p>%s</p></div>',
+            esc_html__( 'StaySuite Companion for WpRentals is built for the WpRentals theme. Some features may not work with the active theme.', 'staysuite-companion' )
+        );
+    }
+
+    /**
+     * Whether the current admin screen may show the theme notice.
+     *
+     * @return bool True on the Plugins screen and StaySuite/Hotels screens.
+     */
+    private function is_notice_screen() {
+        if ( ! function_exists( 'get_current_screen' ) ) {
+            return false;
+        }
+        $screen = get_current_screen();
+        if ( ! $screen instanceof \WP_Screen ) {
+            return false;
+        }
+        $allowed = array(
+            'plugins',
+            'toplevel_page_' . Admin\Settings::MENU_SLUG,
+            'edit-' . Hotel\HotelCPT::POST_TYPE,
+            Hotel\HotelCPT::POST_TYPE,
+            'edit-' . Booking\RequestCPT::POST_TYPE,
+            Booking\RequestCPT::POST_TYPE,
+        );
+        $assign = isset( $this->container['assign_page'] ) ? $this->container['assign_page'] : null;
+        if ( $assign instanceof Admin\AssignPage && '' !== $assign->hook_suffix() ) {
+            $allowed[] = $assign->hook_suffix();
+        }
+        return in_array( $screen->id, $allowed, true );
+    }
+
+    /**
+     * Load the notice-dismissal script where the notice may appear.
+     *
+     * @return void
+     */
+    public function notice_assets() {
+        if ( get_template() === Installer::REQUIRED_THEME || ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        if ( ! $this->is_notice_screen() ) {
+            return;
+        }
+        wp_enqueue_script( 'ssc-notice', SSC_URL . 'assets/js/ssc-notice.js', array(), SSC_VERSION, true );
+        wp_localize_script(
+            'ssc-notice', 'sscNotice', array(
+				'ajaxurl' => admin_url( 'admin-ajax.php' ),
+				'nonce'   => wp_create_nonce( self::NOTICE_NONCE_ACTION ),
+            )
+        );
+    }
+
+    /**
+     * Remember a notice dismissal for the current user.
+     *
+     * @return void
+     */
+    public function dismiss_notice() {
+        check_ajax_referer( self::NOTICE_NONCE_ACTION, 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( array(), 403 );
+        }
+        $key = isset( $_POST['key'] ) && is_string( $_POST['key'] )
+            ? sanitize_key( wp_unslash( $_POST['key'] ) )
+            : '';
+        if ( 'theme' !== $key ) {
+            wp_send_json_error( array(), 400 );
+        }
+        update_user_meta( get_current_user_id(), self::NOTICE_DISMISS_META, 1 );
+        wp_send_json_success();
     }
 }
 

@@ -71,6 +71,15 @@ class AssignPage {
     }
 
     /**
+     * Hook suffix of the submenu page (empty until the menu registers).
+     *
+     * @return string Hook suffix or empty string.
+     */
+    public function hook_suffix() {
+        return $this->hook_suffix;
+    }
+
+    /**
      * Load the bulk-checkbox script on the assignment screen only.
      *
      * @param string $hook Current admin page hook.
