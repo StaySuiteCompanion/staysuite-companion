@@ -26,7 +26,7 @@ bin/build.sh [version] [--lint] [--skip-npm] [--vendor=copy]
 
 ### Ships
 
-`staysuite-companion.php`, `readme.txt`, `includes/`, `templates/`, `assets/build/` (JS **and** `css/`, the Sass output), `assets/js/`, `assets/images/`, `languages/`, `vendor/` (production only). No `.scss` and no `.css` source ever ships.
+`staysuite-companion.php`, `readme.txt`, `uninstall.php`, `LICENSE`, `includes/`, `templates/`, `assets/build/` (JS **and** `css/`, the Sass output), `assets/js/`, `assets/images/`, `languages/`, `vendor/` (production only). No `.scss` and no `.css` source ever ships.
 
 ### Never ships
 
